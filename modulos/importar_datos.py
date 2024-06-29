@@ -7,6 +7,5 @@ def cargar_datos():
     return ambientes_df, clases_df, horarios_df
 
 def validar_datos(ambientes_df, clases_df, horarios_df):
-    #Implementar validaciones
     pass 
 

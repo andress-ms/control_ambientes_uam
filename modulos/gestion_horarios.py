@@ -1,3 +1,5 @@
+import pandas as pd 
+
 def verificar_disponibilidad(ambientes_df, horarios_df, codigo_ambiente, hora_inicio, duracion):
     hora_fin = pd.to_datetime(hora_inicio) + pd.Timedelta(hours=duracion)
     for index, row in horarios_df.iterrows():
