@@ -1,9 +1,11 @@
 import pandas as pd 
-import typing as dict
+import os 
 
 from modulos.gestion_ambientes import agregar_ambiente, eliminar_ambiente, actualizar_ambiente, consultar_ambiente
 
-file_path = 'c:\\Users\\andre\\Desktop\\Ambientes UAM\\database.xlsx'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+file_path = os.path.join(current_dir, 'data', 'database.xlsx')
 
 if __name__ == "__main__":
     ambientes_df = pd.read_excel(file_path)
@@ -16,12 +18,11 @@ nuevo_ambiente = {'codigo_ambiente': "C201",
                   'capacidad': 25}
 
 
-
-ambientes_df = agregar_ambiente(ambientes_df, nuevo_ambiente)
+agregar_ambiente(ambientes_df, nuevo_ambiente)
 print("\nAmbientes después de agregar uno nuevo:")
 print(ambientes_df)
 
-ambientes_df = eliminar_ambiente(ambientes_df, "C101")
+eliminar_ambiente(ambientes_df, "C101")
 print("despues de eliminar")
 print(ambientes_df)
     
