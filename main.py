@@ -7,7 +7,8 @@ from modulos.gestion_ambientes import Usuario, Ambiente, GestorDeAmbientes
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 file_path = os.path.join(current_dir, 'data', 'database.xlsx')
-output_path = os.path.join(current_dir, 'data', 'lista_ambientes.csv')
+output_path = os.path.join(current_dir, 'data', 'database_modificado.csv')
+
 
 if __name__ == "__main__":
     admin = Usuario(nombre='Admin', rol='administrador')
