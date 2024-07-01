@@ -1,19 +1,22 @@
 import pandas as pd
-from administracion import Usuario
+from modulos.administracion import Usuario
 
 class Ambiente:
-    def __init__(self, codigo_ambiente, tipo, disponibilidad, activo, capacidad):
+    def __init__(self, codigo_ambiente, tipo_ambiente, disponibilidad, activo, capacidad):
         self.codigo_ambiente = codigo_ambiente
-        self.tipo = tipo
+        self.tipo_ambiente = tipo_ambiente
         self.disponibilidad = disponibilidad
         self.activo = activo
         self.capacidad = capacidad
 
 class GestorDeAmbientes:
-    def __init__(self, usuario: Usuario):
+    def __init__(self, usuario: Usuario, ambientes_df=None):
         self.usuario = usuario
-        self.ambientes_df = pd.DataFrame(columns=['codigo_ambiente', 'tipo', 'disponibilidad', 'activo', 'capacidad'])
-    
+        if ambientes_df is None:
+            self.ambientes_df = pd.DataFrame(columns=['codigo_ambiente', 'tipo', 'disponibilidad', 'activo', 'capacidad'])
+        else:
+            self.ambientes_df = ambientes_df
+            
     def _verificar_permiso(self):
         if not self.usuario.es_administrador():
             raise PermissionError("Acción no permitida. Se requiere rol de administrador.")

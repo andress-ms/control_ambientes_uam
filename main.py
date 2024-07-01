@@ -1,7 +1,7 @@
 import pandas as pd 
 import os 
 
-from modulos.gestion_ambientes import agregar_ambiente, eliminar_ambiente, actualizar_ambiente, consultar_ambiente
+from modulos.gestion_ambientes import Usuario, Ambiente, GestorDeAmbientes
 
 # IMPORTANTE, database.xlsx debe estar dentro de la carpeta de data
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -10,25 +10,28 @@ file_path = os.path.join(current_dir, 'data', 'database.xlsx')
 output_path = os.path.join(current_dir, 'data', 'lista_ambientes.csv')
 
 if __name__ == "__main__":
-    ambientes_df = pd.read_excel(file_path)
+    admin = Usuario(nombre='Admin', rol='administrador')
+
+    # Leer los datos del archivo Excel
+    ambientes_data = pd.read_excel(file_path)
+
+    # Crear una instancia de GestorDeAmbientes con los datos del archivo Excel
+    gestor_ambientes = GestorDeAmbientes(usuario=admin, ambientes_df=ambientes_data)
     
-    print(ambientes_df)
+    print("Ambientes iniciales:")
+    print(gestor_ambientes.ambientes_df)
 
-    nuevo_ambiente = {
-        'codigo_ambiente': "C201",
-        'tipo_ambiente': "Aula",
-        'estado': "Disponible",
-        'capacidad': 25
-    }
-
-    agregar_ambiente(ambientes_df, nuevo_ambiente)
+    # Crear un nuevo ambiente y agregarlo
+    nuevo_ambiente = Ambiente(codigo_ambiente="C201", tipo_ambiente="Aula", disponibilidad=True, activo=True, capacidad=25)
+    gestor_ambientes.agregar_ambiente(nuevo_ambiente)
     print("\nAmbientes después de agregar uno nuevo:")
-    print(ambientes_df)
+    print(gestor_ambientes.ambientes_df)
 
-    eliminar_ambiente(ambientes_df, "C101")
-    print("despues de eliminar")
-    print(ambientes_df)
+    # Eliminar un ambiente
+    gestor_ambientes.eliminar_ambiente("C101")
+    print("\nAmbientes después de eliminar uno:")
+    print(gestor_ambientes.ambientes_df)
     
     # Exportar el DataFrame modificado a un archivo .csv en la carpeta data
-    ambientes_df.to_csv(output_path, index=False)
+    gestor_ambientes.ambientes_df.to_csv(output_path, index=False)
     print(f"\nEl DataFrame modificado se ha guardado en {output_path}")
