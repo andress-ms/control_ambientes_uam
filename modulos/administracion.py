@@ -1,2 +1,7 @@
-from gestion_ambientes import agregar_ambiente, eliminar_ambiente, actualizar_ambiente
-from gestion_clases import agregar_clase, eliminar_clase, actualizar_clase
+class Usuario:
+    def __init__(self, nombre, rol):
+        self.nombre = nombre
+        self.rol = rol
+
+    def es_administrador(self):
+        return self.rol == 'administrador'

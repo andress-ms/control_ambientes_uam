@@ -1,24 +1,41 @@
 import pandas as pd
-from typing import Dict
+from administracion import Usuario
 
-def agregar_ambiente(ambientes_df: pd.DataFrame, nuevo_ambiente: Dict) -> None:
-    nuevo_df = pd.DataFrame([nuevo_ambiente])
-    ambientes_df = pd.concat([ambientes_df, nuevo_df], ignore_index=True)
-    return None
+class Ambiente:
+    def __init__(self, codigo_ambiente, tipo, disponibilidad, activo, capacidad):
+        self.codigo_ambiente = codigo_ambiente
+        self.tipo = tipo
+        self.disponibilidad = disponibilidad
+        self.activo = activo
+        self.capacidad = capacidad
 
-def eliminar_ambiente(ambientes_df: pd.DataFrame, codigo_ambiente: str) -> None:
-    ambientes_df.drop(ambientes_df[ambientes_df['codigo_ambiente'] == codigo_ambiente].index, inplace=True)
-    return None
-
-def actualizar_ambiente(ambientes_df: pd.DataFrame, codigo_ambiente: str, datos_actualizados: Dict) -> None:
-    try:
-        ambientes_df.loc[ambientes_df['codigo_ambiente'] == codigo_ambiente, list(datos_actualizados.keys())] = list(datos_actualizados.values())
-    except Exception as e:
-        print(f"Error al actualizar el ambiente: {e}")
-    return None
-
-def consultar_ambiente(ambientes_df: pd.DataFrame, codigo_ambiente: str) -> pd.DataFrame:
-    ambiente = ambientes_df[ambientes_df['codigo_ambiente'] == codigo_ambiente]
-    if ambiente.empty:
-        print("No se encontró el ambiente con el código proporcionado.")
-    return ambiente
+class GestorDeAmbientes:
+    def __init__(self, usuario: Usuario):
+        self.usuario = usuario
+        self.ambientes_df = pd.DataFrame(columns=['codigo_ambiente', 'tipo', 'disponibilidad', 'activo', 'capacidad'])
+    
+    def _verificar_permiso(self):
+        if not self.usuario.es_administrador():
+            raise PermissionError("Acción no permitida. Se requiere rol de administrador.")
+    
+    def agregar_ambiente(self, nuevo_ambiente: Ambiente) -> None:
+        self._verificar_permiso()
+        nuevo_df = pd.DataFrame([vars(nuevo_ambiente)])
+        self.ambientes_df = pd.concat([self.ambientes_df, nuevo_df], ignore_index=True)
+    
+    def eliminar_ambiente(self, codigo_ambiente: str) -> None:
+        self._verificar_permiso()
+        self.ambientes_df.drop(self.ambientes_df[self.ambientes_df['codigo_ambiente'] == codigo_ambiente].index, inplace=True)
+    
+    def actualizar_ambiente(self, codigo_ambiente: str, datos_actualizados: dict) -> None:
+        self._verificar_permiso()
+        try:
+            self.ambientes_df.loc[self.ambientes_df['codigo_ambiente'] == codigo_ambiente, list(datos_actualizados.keys())] = list(datos_actualizados.values())
+        except Exception as e:
+            print(f"Error al actualizar el ambiente: {e}")
+    
+    def consultar_ambiente(self, codigo_ambiente: str) -> pd.DataFrame:
+        ambiente = self.ambientes_df[self.ambientes_df['codigo_ambiente'] == codigo_ambiente]
+        if ambiente.empty:
+            print("No se encontró el ambiente con el código proporcionado.")
+        return ambiente

@@ -1,0 +1,4 @@
+codigo_ambiente,tipo_ambiente,estado,capacidad
+C102,Auditorio,Disponible,20
+B103,Aula,Disponible,40
+B105,Aula,Disponible,30
