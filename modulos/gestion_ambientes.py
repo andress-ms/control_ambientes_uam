@@ -5,8 +5,8 @@ class Ambiente:
     def __init__(self, codigo_ambiente, tipo_ambiente, disponibilidad, activo, capacidad):
         self.codigo_ambiente = codigo_ambiente
         self.tipo_ambiente = tipo_ambiente
-        self.disponibilidad = disponibilidad
-        self.activo = activo
+        self.disponibilidad = "Disponible" if disponibilidad else "No disponible"
+        self.activo = "Activo" if activo else "Inactivo"
         self.capacidad = capacidad
 
 class GestorDeAmbientes:
@@ -42,3 +42,5 @@ class GestorDeAmbientes:
         if ambiente.empty:
             print("No se encontró el ambiente con el código proporcionado.")
         return ambiente
+
+#asignar actividad

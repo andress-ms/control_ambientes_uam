@@ -1,11 +1,11 @@
 import pandas as pd 
 import os 
 
-from modulos.gestion_ambientes import Usuario, Ambiente, GestorDeAmbientes
+from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
+from modulos.administracion import Usuario
 
 # IMPORTANTE, database.xlsx debe estar dentro de la carpeta de data
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
 file_path = os.path.join(current_dir, 'data', 'database.xlsx')
 output_path = os.path.join(current_dir, 'data', 'database_modificado.csv')
 
