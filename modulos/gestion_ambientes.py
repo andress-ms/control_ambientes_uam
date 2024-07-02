@@ -1,5 +1,5 @@
 import pandas as pd
-from modulos.administracion import Usuario
+from modulos.administracion import Usuario, exportar_dataframe_a_csv
 
 class Ambiente:
     def __init__(self, codigo_ambiente, tipo_ambiente, disponibilidad, activo, capacidad):
@@ -42,5 +42,6 @@ class GestorDeAmbientes:
         if ambiente.empty:
             print("No se encontró el ambiente con el código proporcionado.")
         return ambiente
-
-#asignar actividad
+    
+    def exportar_a_csv(self, nombre_archivo):
+        exportar_dataframe_a_csv(self.ambientes_df, nombre_archivo)

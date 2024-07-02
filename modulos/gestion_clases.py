@@ -1,5 +1,5 @@
 import pandas as pd
-from administracion import Usuario
+from modulos.administracion import Usuario, exportar_dataframe_a_csv
 
 class Actividad:
     def __init__(self, codigo_clase, nombre, duracion, tamaño, grupo, docente=None):
@@ -14,10 +14,13 @@ class Actividad:
         return f"Actividad(codigo_clase='{self.codigo_clase}', nombre='{self.nombre}', duracion={self.duracion}, tamaño={self.tamaño}, grupo='{self.grupo}', docente='{self.docente}')"
 
 class GestorDeActividades:
-    def __init__(self, usuario: Usuario):
+    def __init__(self, usuario: Usuario, actividades_df= None):
         self.usuario = usuario
-        self.actividades_df = pd.DataFrame(columns=['codigo_clase', 'nombre', 'duracion', 'tamaño', 'grupo', 'docente'])
-    
+        if actividades_df is None:
+            self.actividades_df = pd.DataFrame(columns=['codigo_clase', 'nombre', 'duracion', 'tamaño', 'grupo', 'docente'])
+        else: 
+            self.actividades_df = actividades_df
+            
     def _verificar_permiso(self):
         if not self.usuario.es_administrador():
             raise PermissionError("Acción no permitida. Se requiere rol de administrador.")
@@ -44,4 +47,5 @@ class GestorDeActividades:
             print("No se encontró la actividad con el código proporcionado.")
         return actividad
 
-
+    def exportar_a_csv(self, nombre_archivo):
+        exportar_dataframe_a_csv(self.actividades_df, nombre_archivo)
