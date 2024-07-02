@@ -1,17 +1,17 @@
-import pandas as pd 
 import os 
 
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
 from modulos.gestion_clases import Actividad, GestorDeActividades
 from modulos.administracion import Usuario
 from modulos.importar_datos import cargar_datos, obtener_columnas_de_clase
+from modulos.gestion_horarios import Horario, HorariosDataFrame
 
 # IMPORTANTE, database.xlsx debe estar dentro de la carpeta de data
 current_dir = os.path.dirname(os.path.abspath(__file__))
 excel_path = os.path.join(current_dir, 'data', 'database.xlsx')
 csv_path_ambientes = os.path.join(current_dir, 'data', 'lista_ambientes.csv')
 csv_path_actividades = os.path.join(current_dir, 'data', 'lista_actividades.csv')
-
+csv_path_horarios = os.path.join(current_dir, 'data', 'horarios.csv')
 
 if __name__ == "__main__":
     admin = Usuario(nombre='Admin', rol='administrador')
@@ -68,3 +68,30 @@ if __name__ == "__main__":
     print(gestor_clases.actividades_df)
     # Exportar el DataFrame de actividades a un archivo .csv en la carpeta data
     gestor_clases.exportar_a_csv(csv_path_actividades)
+    
+    aula1 = Ambiente("A101", "Aula", True, True, 30)
+    aula2 = Ambiente("A102", "Laboratorio", True, True, 20)
+
+    actividad1 = Actividad("SIS108", "Lógica y Algoritmos", 2, 25, 3, "Ivan Arguello")
+    actividad2 = Actividad("MAT201", "Álgebra Lineal", 2, 30, 1, "María García")
+
+    # Crear un horario para cada ambiente
+    horario_aula1 = Horario(aula1)
+    horario_aula2 = Horario(aula2)
+
+    # Asignar actividades a diferentes períodos para cada horario
+    horario_aula1.asignar_actividad('8-8:50 AM', actividad1)
+    horario_aula1.asignar_actividad('10-10:50 AM', actividad2)
+    horario_aula2.asignar_actividad('9-9:50 AM', actividad1)
+    horario_aula2.asignar_actividad('11-11:50 AM', actividad2)
+
+    # Crear un contenedor de horarios y agregar los horarios creados
+    horarios_contenedor = HorariosDataFrame()
+    horarios_contenedor.agregar_horario(horario_aula1)
+    horarios_contenedor.agregar_horario(horario_aula2)
+
+    # Obtener y mostrar los horarios como un DataFrame
+    horarios_df = horarios_contenedor.obtener_horarios_como_dataframe()
+    print("Horarios de Aulas:")
+    print(horarios_df)
+    horarios_contenedor.exportar_a_csv(csv_path_horarios)
