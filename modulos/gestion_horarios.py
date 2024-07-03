@@ -23,12 +23,22 @@ class Horario:
             '7:40-8:30 PM': None,
             '8:30-9:20 PM': None
         }
+        self.periodo_orden = list(self.periodos.keys())
 
     def asignar_actividad(self, periodo, actividad: Actividad):
-        if periodo in self.periodos:
-            self.periodos[periodo] = actividad
-        else:
+        if periodo not in self.periodos:
             print(f"Periodo '{periodo}' no válido.")
+            return
+
+        periodo_idx = self.periodo_orden.index(periodo)
+        duracion = actividad.duracion
+
+        if periodo_idx + duracion > len(self.periodo_orden):
+            print(f"No hay suficientes periodos disponibles para asignar la actividad '{actividad.nombre}'.")
+            return
+
+        for i in range(duracion):
+            self.periodos[self.periodo_orden[periodo_idx + i]] = actividad
 
     def obtener_actividad(self, periodo):
         if periodo in self.periodos:
@@ -36,6 +46,8 @@ class Horario:
         else:
             print(f"Periodo '{periodo}' no válido.")
             return None
+
+        
 class HorariosDataFrame:
     def __init__(self):
         self.horarios = []
@@ -56,24 +68,10 @@ class HorariosDataFrame:
     def obtener_horarios_como_dataframe(self) -> pd.DataFrame:
         horarios_data = []
         for horario in self.horarios:
-            horario_data = {
-                'Ambiente': horario.ambiente.codigo_ambiente,
-                '7-7:50 AM': horario.obtener_actividad('7-7:50 AM').nombre if horario.obtener_actividad('7-7:50 AM') else '',
-                '8-8:50 AM': horario.obtener_actividad('8-8:50 AM').nombre if horario.obtener_actividad('8-8:50 AM') else '',
-                '9-9:50 AM': horario.obtener_actividad('9-9:50 AM').nombre if horario.obtener_actividad('9-9:50 AM') else '',
-                '10-10:50 AM': horario.obtener_actividad('10-10:50 AM').nombre if horario.obtener_actividad('10-10:50 AM') else '',
-                '11-11:50 AM': horario.obtener_actividad('11-11:50 AM').nombre if horario.obtener_actividad('11-11:50 AM') else '',
-                '12M-12:50 PM': horario.obtener_actividad('12M-12:50 PM').nombre if horario.obtener_actividad('12M-12:50 PM') else '',
-                '1-1:50 PM': horario.obtener_actividad('1-1:50 PM').nombre if horario.obtener_actividad('1-1:50 PM') else '',
-                '2-2:50 PM': horario.obtener_actividad('2-2:50 PM').nombre if horario.obtener_actividad('2-2:50 PM') else '',
-                '3-3:50 PM': horario.obtener_actividad('3-3:50 PM').nombre if horario.obtener_actividad('3-3:50 PM') else '',
-                '4-4:50 PM': horario.obtener_actividad('4-4:50 PM').nombre if horario.obtener_actividad('4-4:50 PM') else '',
-                '5-5:50 PM': horario.obtener_actividad('5-5:50 PM').nombre if horario.obtener_actividad('5-5:50 PM') else '',
-                '5:50-6:40 PM': horario.obtener_actividad('5:50-6:40 PM').nombre if horario.obtener_actividad('5:50-6:40 PM') else '',
-                '6:45-7:35 PM': horario.obtener_actividad('6:45-7:35 PM').nombre if horario.obtener_actividad('6:45-7:35 PM') else '',
-                '7:40-8:30 PM': horario.obtener_actividad('7:40-8:30 PM').nombre if horario.obtener_actividad('7:40-8:30 PM') else '',
-                '8:30-9:20 PM': horario.obtener_actividad('8:30-9:20 PM').nombre if horario.obtener_actividad('8:30-9:20 PM') else ''
-            }
+            horario_data = {'Ambiente': horario.ambiente.codigo_ambiente}
+            for periodo in horario.periodo_orden:
+                actividad = horario.obtener_actividad(periodo)
+                horario_data[periodo] = actividad.nombre if actividad else ''
             horarios_data.append(horario_data)
 
         horarios_df = pd.DataFrame(horarios_data)

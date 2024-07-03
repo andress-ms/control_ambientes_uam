@@ -1,5 +1,4 @@
 import os 
-
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
 from modulos.gestion_clases import Actividad, GestorDeActividades
 from modulos.administracion import Usuario
