@@ -1,5 +1,6 @@
 import pandas as pd
 from modulos.administracion import Usuario, exportar_dataframe_a_csv
+from modulos.gestion_clases import Actividad
 
 class Ambiente:
     def __init__(self, codigo_ambiente, tipo_ambiente, disponibilidad, activo, capacidad):
@@ -45,3 +46,11 @@ class GestorDeAmbientes:
     
     def exportar_a_csv(self, nombre_archivo):
         exportar_dataframe_a_csv(self.ambientes_df, nombre_archivo)
+        
+    def filtrar_ambientes_para_actividad(self, actividad: Actividad) -> pd.DataFrame:
+        ambientes_filtrados = self.ambientes_df[
+            (self.ambientes_df['disponibilidad'] == "Disponible") &
+            (self.ambientes_df['activo'] == "Activo") &
+            (self.ambientes_df['capacidad'] >= actividad.tamaño)
+        ]
+        return ambientes_filtrados

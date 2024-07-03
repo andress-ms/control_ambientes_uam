@@ -93,4 +93,31 @@ if __name__ == "__main__":
     horarios_df = horarios_contenedor.obtener_horarios_como_dataframe()
     print("Horarios de Aulas:")
     print(horarios_df)
+    
     horarios_contenedor.exportar_a_csv(csv_path_horarios)
+    
+    gestor_ambientes.agregar_ambiente(Ambiente('A101', 'Laboratorio', True, True, 30))
+    gestor_ambientes.agregar_ambiente(Ambiente('A102', 'Aula', True, True, 25))
+    gestor_ambientes.agregar_ambiente(Ambiente('A103', 'Aula', False, True, 20))
+
+    # Crear instancia de Actividad
+    actividad = Actividad('LOL203','Lógica y Algoritmos', 2, 25, 5, 'Christopher Ibarra')
+
+    # Filtrar ambientes disponibles para la actividad
+    ambientes_disponibles = gestor_ambientes.filtrar_ambientes_para_actividad(actividad)
+    print(ambientes_disponibles)
+
+    # Crear instancias de Horario y HorariosDataFrame
+    horarios_df = HorariosDataFrame()
+
+    horario_a101 = Horario(gestor_ambientes.consultar_ambiente('A101').iloc[0])
+    horario_a102 = Horario(gestor_ambientes.consultar_ambiente('A102').iloc[0])
+
+    horarios_df.agregar_horario(horario_a101)
+    horarios_df.agregar_horario(horario_a102)
+
+    # Asignar actividad a ambiente
+    horarios_df.asignar_actividad_a_ambiente('A101', '8-8:50 AM', actividad)
+
+    # Exportar horarios a CSV
+    horarios_df.exportar_a_csv('horarios.csv')

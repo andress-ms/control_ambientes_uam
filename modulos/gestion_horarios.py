@@ -25,20 +25,14 @@ class Horario:
         }
         self.periodo_orden = list(self.periodos.keys())
 
-    def asignar_actividad(self, periodo, actividad: Actividad):
-        if periodo not in self.periodos:
-            print(f"Periodo '{periodo}' no válido.")
-            return
-
-        periodo_idx = self.periodo_orden.index(periodo)
-        duracion = actividad.duracion
-
-        if periodo_idx + duracion > len(self.periodo_orden):
-            print(f"No hay suficientes periodos disponibles para asignar la actividad '{actividad.nombre}'.")
-            return
-
-        for i in range(duracion):
-            self.periodos[self.periodo_orden[periodo_idx + i]] = actividad
+    def asignar_actividad(self, periodo_inicio, actividad: Actividad):
+        periodos_lista = list(self.periodos.keys())
+        indice_inicio = periodos_lista.index(periodo_inicio)
+        if all(self.periodos[periodos_lista[indice_inicio + i]] is None for i in range(actividad.duracion)):
+            for i in range(actividad.duracion):
+                self.periodos[periodos_lista[indice_inicio + i]] = actividad
+        else:
+            print(f"No se puede asignar la actividad '{actividad.nombre}' en el periodo '{periodo_inicio}'. Períodos no disponibles.")
 
     def obtener_actividad(self, periodo):
         if periodo in self.periodos:
@@ -80,3 +74,19 @@ class HorariosDataFrame:
     def exportar_a_csv(self, nombre_archivo):
         horarios_df = self.obtener_horarios_como_dataframe()
         exportar_dataframe_a_csv(horarios_df, nombre_archivo)
+
+    def verificar_disponibilidad(self, ambiente_codigo: str, periodo_inicio: str, duracion: int) -> bool:
+        horario = self.consultar_horario(ambiente_codigo)
+        if horario:
+            periodos_lista = list(horario.periodos.keys())
+            indice_inicio = periodos_lista.index(periodo_inicio)
+            return all(horario.periodos[periodos_lista[indice_inicio + i]] is None for i in range(duracion))
+        return False
+
+    def asignar_actividad_a_ambiente(self, ambiente_codigo: str, periodo_inicio: str, actividad: Actividad):
+        if self.verificar_disponibilidad(ambiente_codigo, periodo_inicio, actividad.duracion):
+            horario = self.consultar_horario(ambiente_codigo)
+            horario.asignar_actividad(periodo_inicio, actividad)
+            print(f"Actividad '{actividad.nombre}' asignada al ambiente '{ambiente_codigo}' en el periodo '{periodo_inicio}'.")
+        else:
+            print(f"No se puede asignar la actividad '{actividad.nombre}' al ambiente '{ambiente_codigo}' en el periodo '{periodo_inicio}'. Períodos no disponibles.")
