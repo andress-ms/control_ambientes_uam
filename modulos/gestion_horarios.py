@@ -133,3 +133,34 @@ class HorariosDataFrame:
             print(f"Actividad '{actividad.nombre}' asignada al ambiente '{ambiente_codigo}' en el periodo '{periodo_inicio}'.")
         else:
             print(f"Error aca")
+
+    def mostrar_ambientes_disponibles(self, actividad: Actividad, gestor_ambientes: GestorDeAmbientes):
+        ambientes_disponibles = gestor_ambientes.filtrar_ambientes_para_actividad(actividad)
+        
+        if ambientes_disponibles.empty:
+            print("No hay ambientes disponibles que cumplan con los requisitos de la actividad.")
+        else:
+            print("Ambientes disponibles para la actividad:")
+            for i, ambiente in ambientes_disponibles.iterrows():
+                print(f"{i}. {ambiente['codigo_ambiente']} - Tipo: {ambiente['tipo_ambiente']}, Capacidad: {ambiente['capacidad']}")
+        
+        return ambientes_disponibles['codigo_ambiente'].tolist()
+
+    def seleccionar_ambiente_asignar_actividad(self, actividad: Actividad, gestor_ambientes: GestorDeAmbientes):
+        ambientes_disponibles = self.mostrar_ambientes_disponibles(actividad, gestor_ambientes)
+        opcion = input("Seleccione el número del ambiente donde desea asignar la actividad: ")
+
+        try:
+            print(ambientes_disponibles)
+            opcion = int(opcion)
+            if opcion > 0 and opcion <= len(ambientes_disponibles):
+                ambiente_seleccionado = ambientes_disponibles[opcion - 1]
+                print(f"Ambiente seleccionado: {ambiente_seleccionado}")
+                periodo_inicio = input("Ingrese el período de inicio (por ejemplo, '8-8:50 AM'): ")
+                self.asignar_actividad_a_ambiente(ambiente_seleccionado, periodo_inicio, actividad, gestor_ambientes)
+            else:
+                print("Opción inválida. Seleccione un número válido.")
+        except ValueError:
+            print("Entrada inválida. Ingrese un número válido.")
+
+

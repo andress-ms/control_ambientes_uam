@@ -22,7 +22,8 @@ def mostrar_menu():
     print("4. Eliminar Actividad")
     print("5. Asignar Actividad a Horario")
     print("6. Mostrar Horarios")
-    print("7. Salir")
+    print("7. Asignar aula y horario a actividad")
+    print("8. Salir")
 
 def agregar_ambiente_menu(gestor_ambientes: GestorDeAmbientes):
     codigo = input("Ingrese el código del ambiente: ")
@@ -84,6 +85,14 @@ def manejar_opcion(opcion, gestor_ambientes: GestorDeAmbientes, gestor_clases: G
         print("Mostrando Horarios:")
         horarios_contenedor.mostrar_horarios()
     elif opcion == '7':
+        codigo_actividad = input("Ingrese el código de la actividad: ")
+        actividad = gestor_clases.consultar_actividad(codigo_actividad)
+        if not actividad.empty:
+                actividad_obj = Actividad(**actividad.iloc[0].to_dict())
+                horarios_contenedor.seleccionar_ambiente_asignar_actividad(actividad_obj, gestor_ambientes)
+        else:
+                print("No se encontró la actividad.")
+    elif opcion == '8':
         print("Saliendo...")
         return False
     else:

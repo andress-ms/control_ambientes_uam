@@ -14,7 +14,7 @@ class GestorDeAmbientes:
     def __init__(self, usuario: Usuario, ambientes_df=None):
         self.usuario = usuario
         if ambientes_df is None:
-            self.ambientes_df = pd.DataFrame(columns=['codigo_ambiente', 'tipo', 'disponibilidad', 'activo', 'capacidad'])
+            self.ambientes_df = pd.DataFrame(columns=['codigo_ambiente', 'tipo_ambiente', 'disponibilidad', 'activo', 'capacidad'])
         else:
             self.ambientes_df = ambientes_df
             
@@ -49,9 +49,16 @@ class GestorDeAmbientes:
         exportar_dataframe_a_csv(self.ambientes_df, nombre_archivo)
         
     def filtrar_ambientes_para_actividad(self, actividad: Actividad) -> pd.DataFrame:
-        ambientes_filtrados = self.ambientes_df[
-            (self.ambientes_df['disponibilidad'] == "Disponible") &
-            (self.ambientes_df['activo'] == "Activo") &
-            (self.ambientes_df['capacidad'] >= actividad.tamaño)
-        ]
-        return ambientes_filtrados
+        try:
+            # Convertir tamaño de la actividad a tipo numérico
+            actividad_tamano = int(actividad.tamaño)
+
+            ambientes_filtrados = self.ambientes_df[
+                (self.ambientes_df['disponibilidad'] == "Disponible") &
+                (self.ambientes_df['activo'] == "Activo") &
+                (self.ambientes_df['capacidad'].astype(int) >= actividad_tamano)
+            ]
+            return ambientes_filtrados
+        except ValueError as e:
+            print(f"Error al filtrar ambientes: {e}")
+            return pd.DataFrame()  # Devolver un DataFrame vacío en caso de error
