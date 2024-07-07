@@ -1,6 +1,6 @@
 import pandas as pd
 from modulos.gestion_clases import Actividad
-from modulos.gestion_ambientes import Ambiente
+from modulos.gestion_ambientes import Ambiente, GestorDeAmbientes
 from modulos.administracion import exportar_dataframe_a_csv
 
 class Horario:
@@ -26,13 +26,17 @@ class Horario:
         self.periodo_orden = list(self.periodos.keys())
 
     def asignar_actividad(self, periodo_inicio, actividad: Actividad):
+        print(f"Intentando asignar actividad '{actividad.nombre}' en el período '{periodo_inicio}'...")
         periodos_lista = list(self.periodos.keys())
         indice_inicio = periodos_lista.index(periodo_inicio)
+        
         if all(self.periodos[periodos_lista[indice_inicio + i]] is None for i in range(actividad.duracion)):
+            print("Todos los períodos requeridos están disponibles. Asignando actividad...")
             for i in range(actividad.duracion):
                 self.periodos[periodos_lista[indice_inicio + i]] = actividad
+            print(f"Actividad '{actividad.nombre}' asignada en el período '{periodo_inicio}'.")
         else:
-            print(f"No se puede asignar la actividad '{actividad.nombre}' en el periodo '{periodo_inicio}'. Períodos no disponibles.")
+            print(f"No se puede asignar la actividad '{actividad.nombre}' en el período '{periodo_inicio}'. Períodos no disponibles.")
 
     def obtener_actividad(self, periodo):
         if periodo in self.periodos:
@@ -54,18 +58,37 @@ class HorariosDataFrame:
         else:
             self.horarios_df = horarios_df.set_index('ambiente')
 
-    def consultar_horario(self, codigo_ambiente: str):
-        if codigo_ambiente in self.horarios_df.index:
-            data = self.horarios_df.loc[codigo_ambiente]
-            ambiente = Ambiente(codigo_ambiente)
+    def consultar_horario(self, codigo_ambiente: str, gestor_ambientes: 'GestorDeAmbientes'):
+        if gestor_ambientes is None:
+            print("Error: El gestor de ambientes no está definido.")
+            return None
+        
+        ambiente_data = gestor_ambientes.consultar_ambiente(codigo_ambiente)
+        
+        if not ambiente_data.empty:
+            # Convertir ambiente_data a un objeto Ambiente
+            ambiente_info = ambiente_data.iloc[0].to_dict()
+            ambiente = Ambiente(**ambiente_info)
+            
+            if codigo_ambiente in self.horarios_df.index:
+                data = self.horarios_df.loc[codigo_ambiente]
+            else:
+                data = {periodo: None for periodo in self.horarios_df.columns if periodo != 'ambiente'}
+
             horario = Horario(ambiente)
             for periodo, actividad in data.items():
-                horario.periodos[periodo] = actividad
+                if isinstance(actividad, str) and actividad == '-':
+                    horario.periodos[periodo] = None
+                else:
+                    actividad_obj = Actividad(nombre=actividad) if actividad else None
+                    horario.periodos[periodo] = actividad_obj
             return horario
-        return None
+        else:
+            print(f"No se encontró el ambiente con código '{codigo_ambiente}'.")
+            return None
 
     def mostrar_horarios(self):
-        df_horarios = self.horarios_df.fillna('Libre')
+        df_horarios = self.horarios_df.fillna('-')
         print(df_horarios.to_string())
 
     def agregar_horario(self, horario):
@@ -78,25 +101,35 @@ class HorariosDataFrame:
         if ambiente_codigo in self.horarios_df.index:
             self.horarios_df = self.horarios_df.drop(index=ambiente_codigo)
         else:
-            print(f"Ambiente '{ambiente_codigo}' no encontrado.")
+            print(f"Registro anterior de Ambiente '{ambiente_codigo}' no encontrado.")
   
     def exportar_a_csv(self, nombre_archivo):
         self.horarios_df.to_csv(nombre_archivo, index=False)
 
-    def verificar_disponibilidad(self, ambiente_codigo: str, periodo_inicio: str, duracion: int) -> bool:
-        horario = self.consultar_horario(ambiente_codigo)
+    def verificar_disponibilidad(self, ambiente_codigo: str, periodo_inicio: str, duracion: int, gestor_ambientes: GestorDeAmbientes) -> bool:
+        horario = self.consultar_horario(ambiente_codigo, gestor_ambientes)
         if horario:
             periodos_lista = list(horario.periodos.keys())
-            indice_inicio = periodos_lista.index(periodo_inicio)
-            return all(horario.periodos[periodos_lista[indice_inicio + i]] is None for i in range(duracion))
-        return False
-
-    def asignar_actividad_a_ambiente(self, ambiente_codigo: str, periodo_inicio: str, actividad: Actividad):
-        if self.verificar_disponibilidad(ambiente_codigo, periodo_inicio, actividad.duracion):
-            horario = self.consultar_horario(ambiente_codigo)
+            if periodo_inicio in periodos_lista:
+                indice_inicio = periodos_lista.index(periodo_inicio)
+                # Verificar disponibilidad para la duración de la actividad
+                if indice_inicio + duracion <= len(periodos_lista):
+                    return all(horario.periodos[periodos_lista[indice_inicio + i]] is None for i in range(duracion))
+                else:
+                    print("No hay suficientes periodos para la duración solicitada")
+                    return False  
+            else:
+                print("El periodo_inicio no está en la lista de periodos del horario")
+                return False  
+        print("No se encontró el horario para el ambiente")
+        return False   
+    
+    def asignar_actividad_a_ambiente(self, ambiente_codigo: str, periodo_inicio: str, actividad: Actividad, gestor_ambientes: GestorDeAmbientes):
+        if self.verificar_disponibilidad(ambiente_codigo, periodo_inicio, actividad.duracion, gestor_ambientes):
+            horario = self.consultar_horario(ambiente_codigo, gestor_ambientes)
             horario.asignar_actividad(periodo_inicio, actividad)
             self.eliminar_horario(ambiente_codigo)  # Eliminamos el horario antiguo
             self.agregar_horario(horario)  # Agregamos el horario actualizado
             print(f"Actividad '{actividad.nombre}' asignada al ambiente '{ambiente_codigo}' en el periodo '{periodo_inicio}'.")
         else:
-            print(f"No se puede asignar la actividad '{actividad.nombre}' al ambiente '{ambiente_codigo}' en el periodo '{periodo_inicio}'. Períodos no disponibles.")
+            print(f"Error aca")
