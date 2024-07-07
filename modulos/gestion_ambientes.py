@@ -39,7 +39,7 @@ class GestorDeAmbientes:
             print(f"Error al actualizar el ambiente: {e}")
     
     def consultar_ambiente(self, codigo_ambiente: str) -> pd.DataFrame:
-        ambiente = self.ambientes_df[self.ambientes_df['codigo_ambiente'] == codigo_ambiente]
+        ambiente = self.ambientes_df[self.ambientes_df['codigo'] == codigo_ambiente]
         if ambiente.empty:
             print("No se encontró el ambiente con el código proporcionado.")
         return ambiente

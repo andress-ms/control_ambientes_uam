@@ -3,7 +3,7 @@ from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
 from modulos.gestion_clases import Actividad, GestorDeActividades
 from modulos.administracion import Usuario
 from modulos.importar_datos import cargar_datos, obtener_columnas_de_clase
-from modulos.gestion_horarios import HorariosDataFrame
+from modulos.gestion_horarios import HorariosDataFrame, Horario
 from menu import iniciar_menu
 
 # IMPORTANTE, database.xlsx debe estar dentro de la carpeta de data
@@ -26,6 +26,8 @@ if __name__ == "__main__":
 
     gestor_clases = GestorDeActividades(usuario=admin, actividades_df=actividades_data)
 
-    horarios_contenedor = HorariosDataFrame()
+    horarios_data = cargar_datos(csv_path_horarios, excel_path, obtener_columnas_de_clase(Horario), hoja_excel = 'Hoja 3')
+    
+    horarios_contenedor = HorariosDataFrame(horarios_df=horarios_data)
 
     iniciar_menu(gestor_ambientes, gestor_clases, horarios_contenedor)

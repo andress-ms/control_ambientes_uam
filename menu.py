@@ -24,7 +24,7 @@ def mostrar_menu():
     print("6. Mostrar Horarios")
     print("7. Salir")
 
-def agregar_ambiente_menu(gestor_ambientes):
+def agregar_ambiente_menu(gestor_ambientes: GestorDeAmbientes):
     codigo = input("Ingrese el código del ambiente: ")
     tipo = input("Ingrese el tipo de ambiente: ")
     disponibilidad = input("¿Está disponible? (s/n): ").lower() == 's'
@@ -34,7 +34,7 @@ def agregar_ambiente_menu(gestor_ambientes):
     gestor_ambientes.agregar_ambiente(nuevo_ambiente)
     print("Ambiente agregado.")
 
-def agregar_actividad_menu(gestor_clases):
+def agregar_actividad_menu(gestor_clases: GestorDeActividades):
     codigo = input("Ingrese el código de la clase: ")
     nombre = input("Ingrese el nombre de la clase: ")
     duracion = int(input("Ingrese la duración: "))
@@ -45,14 +45,14 @@ def agregar_actividad_menu(gestor_clases):
     gestor_clases.agregar_actividad(nueva_actividad)
     print("Actividad agregada exitosamente.")
     
-def iniciar_menu(gestor_ambientes, gestor_clases, horarios_contenedor):
+def iniciar_menu(gestor_ambientes: GestorDeAmbientes, gestor_clases: GestorDeActividades, horarios_contenedor: HorariosDataFrame):
     while True:
         mostrar_menu()
         opcion = input("Seleccione una opción: ")
         if not manejar_opcion(opcion, gestor_ambientes, gestor_clases, horarios_contenedor):
             break
 
-def manejar_opcion(opcion, gestor_ambientes, gestor_clases, horarios_contenedor):
+def manejar_opcion(opcion, gestor_ambientes: GestorDeAmbientes, gestor_clases: GestorDeActividades, horarios_contenedor: HorariosDataFrame):
     if opcion == '1':
         agregar_ambiente_menu(gestor_ambientes)
     elif opcion == '2':
@@ -69,35 +69,29 @@ def manejar_opcion(opcion, gestor_ambientes, gestor_clases, horarios_contenedor)
         codigo_ambiente = input("Ingrese el código del ambiente: ")
         ambiente = gestor_ambientes.consultar_ambiente(codigo_ambiente)
         if not ambiente.empty:
+            ambiente_obj = Ambiente(**ambiente.iloc[0].to_dict())
             horario = horarios_contenedor.consultar_horario(codigo_ambiente)
-            if horario is None:
-                horario = Horario(Ambiente(**ambiente.iloc[0].to_dict()))
-                horarios_contenedor.agregar_horario(horario)
+        if horario is None:
+            horario = Horario(ambiente_obj)
+            horarios_contenedor.agregar_horario(horario)
             periodo = input("Ingrese el periodo (e.g., '8-8:50 AM'): ")
             codigo_actividad = input("Ingrese el código de la actividad: ")
             actividad = gestor_clases.consultar_actividad(codigo_actividad)
             if not actividad.empty:
                 actividad_obj = Actividad(**actividad.iloc[0].to_dict())
-                horario.asignar_actividad(periodo, actividad_obj)
+                horarios_contenedor.asignar_actividad_a_ambiente(codigo_ambiente, periodo, actividad_obj)
                 print("Actividad asignada.")
             else:
                 print("No se encontró la actividad.")
         else:
             print("No se encontró el ambiente.")
+
     elif opcion == '6':
-        horarios_df = horarios_contenedor.obtener_horarios_como_dataframe()
-        print("Horarios de Aulas:")
-        print(horarios_df)
+        horarios_contenedor.mostrar_horarios()
     elif opcion == '7':
         print("Saliendo...")
+
         return False
     else:
         print("Opción no válida.")
     return True
-
-def iniciar_menu(gestor_ambientes, gestor_clases, horarios_contenedor):
-    while True:
-        mostrar_menu()
-        opcion = input("Seleccione una opción: ")
-        if not manejar_opcion(opcion, gestor_ambientes, gestor_clases, horarios_contenedor):
-            break
