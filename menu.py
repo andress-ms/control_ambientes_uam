@@ -66,31 +66,25 @@ def manejar_opcion(opcion, gestor_ambientes: GestorDeAmbientes, gestor_clases: G
         gestor_clases.eliminar_actividad(codigo)
         print("Actividad eliminada.")
     elif opcion == '5':
+        print(gestor_ambientes.ambientes_df)
         codigo_ambiente = input("Ingrese el código del ambiente: ")
         ambiente = gestor_ambientes.consultar_ambiente(codigo_ambiente)
         if not ambiente.empty:
-            ambiente_obj = Ambiente(**ambiente.iloc[0].to_dict())
-            horario = horarios_contenedor.consultar_horario(codigo_ambiente)
-        if horario is None:
-            horario = Horario(ambiente_obj)
-            horarios_contenedor.agregar_horario(horario)
             periodo = input("Ingrese el periodo (e.g., '8-8:50 AM'): ")
             codigo_actividad = input("Ingrese el código de la actividad: ")
             actividad = gestor_clases.consultar_actividad(codigo_actividad)
             if not actividad.empty:
                 actividad_obj = Actividad(**actividad.iloc[0].to_dict())
-                horarios_contenedor.asignar_actividad_a_ambiente(codigo_ambiente, periodo, actividad_obj)
-                print("Actividad asignada.")
+                horarios_contenedor.asignar_actividad_a_ambiente(codigo_ambiente, periodo, actividad_obj, gestor_ambientes)
             else:
                 print("No se encontró la actividad.")
         else:
             print("No se encontró el ambiente.")
-
     elif opcion == '6':
+        print("Mostrando Horarios:")
         horarios_contenedor.mostrar_horarios()
     elif opcion == '7':
         print("Saliendo...")
-
         return False
     else:
         print("Opción no válida.")

@@ -39,9 +39,10 @@ class GestorDeAmbientes:
             print(f"Error al actualizar el ambiente: {e}")
     
     def consultar_ambiente(self, codigo_ambiente: str) -> pd.DataFrame:
-        ambiente = self.ambientes_df[self.ambientes_df['codigo'] == codigo_ambiente]
+        # Asegurarse de que el código de ambiente esté en mayúsculas para una comparación insensible a mayúsculas y minúsculas
+        ambiente = self.ambientes_df[self.ambientes_df['codigo_ambiente'].str.upper() == codigo_ambiente.upper()]
         if ambiente.empty:
-            print("No se encontró el ambiente con el código proporcionado.")
+            print(f"No se encontró el ambiente con el código proporcionado: {codigo_ambiente}")
         return ambiente
     
     def exportar_a_csv(self, nombre_archivo):
