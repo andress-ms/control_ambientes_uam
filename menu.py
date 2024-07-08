@@ -1,7 +1,9 @@
 import sys
 import os
+import pandas as pd
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
 from modulos.gestion_clases import GestorDeActividades, Actividad
 from modulos.administracion import Usuario
@@ -19,9 +21,59 @@ actividades_data=cargar_datos(csv_path_actividades, excel_path, obtener_columnas
 horarios_data=cargar_datos(csv_path_horarios, excel_path, obtener_columnas_de_clase(Horario), hoja_excel = 'Hoja 3')
 admin=Usuario(nombre='Admin', rol='administrador')
 
-class VentanaPrincipal(QMainWindow):
+class VentanaLogin(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Login - Control de Ambientes UAM')
+       
+
+        self.label_usuario = QLabel('Usuario:')
+        self.edit_usuario = QLineEdit()
+        self.label_password = QLabel('Contraseña:')
+        self.input_password = QLineEdit()
+        self.btn_login = QPushButton('Iniciar Sesión')
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.label_usuario)
+        layout.addWidget(self.edit_usuario)
+        layout.addWidget(self.label_password)
+        layout.addWidget(self.input_password)
+        layout.addWidget(self.btn_login)
+        
+        self.setLayout(layout)
+
+        self.btn_login.clicked.connect(self.verificar_credenciales)
+
+    def verificar_credenciales(self):
+        usuario = self.edit_usuario.text().strip()
+        contrasena = self.input_password.text().strip()
+
+        if self.autenticar_usuario(usuario, contrasena):
+            self.accept()  
+        else:
+            QMessageBox.warning(self, 'Error de Autenticación', 'Usuario o contraseña incorrectos')
+
+    def autenticar_usuario(self, nombre_usuario, contrasena):
+       
+        if nombre_usuario == 'admin' and contrasena == 'admin1':
+            
+            self.usuario = Usuario(nombre_usuario, 'administrador')
+            return True
+        elif nombre_usuario == 'gabriel' and contrasena == 'banano':
+            # 
+            self.usuario = Usuario(nombre_usuario, 'basico')
+            return True
+        else:
+            return False
+
+    def obtener_usuario_autenticado(self):
+        return self.usuario if hasattr(self, 'usuario') and self.usuario else None
+
+
+class VentanaPrincipal(QMainWindow):
+    def __init__(self, usuario):
+        super().__init__()
+        self.usuario = usuario
         self.setWindowTitle("Control de Ambientes UAM")
         self.setGeometry(100, 100, 800, 600)
         self.initUI()
@@ -270,7 +322,10 @@ class VentanaControlHorarios(QWidget):
         self.asignar_actividad_dialogo.exec_()
     
     def mostrar_horarios(self):
-        horarios = self.horarios_df.mostrar_horarios()
+        horarios_data = pd.read_csv(csv_path_horarios)
+        horarios_df = HorariosDataFrame(horarios_data)
+        horarios = horarios_df.mostrar_horarios()
+        
         self.mostrar_horarios_dialogo = MostrarHorariosDialogo(horarios)
         self.mostrar_horarios_dialogo.exec_()
 
@@ -302,9 +357,13 @@ class ConsultarHorarioDialogo(QDialog):
 
         self.setLayout(layout)
 
-    def consultar(self):
+    def consultar(self, codigo_ambiente):
+        
         self.table.setRowCount(0)
-        horarios = HorariosDataFrame.obtener_horarios()  # Ajusta esta llamada según cómo obtienes los horarios
+        
+        gestor_ambientes = GestorDeAmbientes()
+        
+        horarios = HorariosDataFrame.consultar_horario(self, codigo_ambiente, gestor_ambientes) 
         for horario in horarios:
             row_position = self.table.rowCount()
             self.table.insertRow(row_position)
@@ -356,34 +415,59 @@ class AsignarActividadDialogo(QDialog):
 class MostrarHorariosDialogo(QDialog): 
     def __init__(self, horarios, parent=None):
         super().__init__(parent)
-        self.horarios = horarios
-
         self.setWindowTitle("Mostrar Horarios")
         self.setGeometry(300, 300, 400, 300)
+        
+        self.horarios = horarios
+        
         self.initUI()
 
     def initUI(self):
-        layout = QVBoxLayout()
+        vbox = QVBoxLayout(self)
 
-        self.label = QLabel("Horarios")
-        self.label.setAlignment(Qt.AlignCenter)
-        self.label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 20px;")
-        layout.addWidget(self.label)
+        self.label_titulo = QLabel("Horarios", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        self.label_titulo.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 20px;")
+        vbox.addWidget(self.label_titulo)
 
-        self.table = QTableWidget(0, 4)
+        self.table = QTableWidget(self)
+        self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Código", "Hora Inicio", "Hora Fin", "Actividad"])
-        layout.addWidget(self.table)
 
-        for horario in self.horarios:
-            row_position = self.table.rowCount()
-            self.table.insertRow(row_position)
-            self.table.setItem(row_position, 0, QTableWidgetItem(horario.codigo_ambiente))
-            self.table.setItem(row_position, 1, QTableWidgetItem(horario.hora_inicio))
-            self.table.setItem(row_position, 2, QTableWidgetItem(horario.hora_fin))
-            self.table.setItem(row_position, 3, QTableWidgetItem(horario.actividad.nombre if horario.actividad else ""))
+        # Llenar la tabla con los datos de los horarios
+        if self.horarios:
+            self.llenar_tabla()
 
-        self.setLayout(layout)
+        vbox.addWidget(self.table)
+        self.setLayout(vbox)
+        
+    def cargar_horarios(self, csv_path_horarios):
+        try:
+            df = pd.read_csv(csv_path_horarios)
 
+            horarios = []
+            for index, row in df.iterrows():
+                horario = {
+                    'codigo_ambiente': row['Código'],
+                    'hora_inicio': row['Hora Inicio'],
+                    'hora_fin': row['Hora Fin'],
+                    'actividad': row['Actividad']
+                }
+                horarios.append(horario)
+
+            return horarios
+        except Exception as e:
+            print(f"Error al cargar los horarios desde '{csv_path_horarios}': {e}")
+            return None
+    def llenar_tabla(self):
+        self.table.setRowCount(len(self.horarios))
+
+        for i, horario in enumerate(self.horarios):
+            self.table.setItem(i, 0, QTableWidgetItem(horario['codigo_ambiente']))
+            self.table.setItem(i, 1, QTableWidgetItem(horario['hora_inicio']))
+            self.table.setItem(i, 2, QTableWidgetItem(horario['hora_fin']))
+            self.table.setItem(i, 3, QTableWidgetItem(horario['actividad']))
+            
 def main():
     app = QApplication(sys.argv)
     ventana_principal = VentanaPrincipal()
