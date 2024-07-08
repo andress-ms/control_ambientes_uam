@@ -1,5 +1,6 @@
 import sys
 import os
+import pandas as pd
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -320,7 +321,10 @@ class VentanaControlHorarios(QWidget):
         self.asignar_actividad_dialogo.exec_()
     
     def mostrar_horarios(self):
-        horarios = self.horarios_df.mostrar_horarios()
+        horarios_data = pd.read_csv(csv_path_horarios)
+        horarios_df = HorariosDataFrame(horarios_data)
+        horarios = horarios_df.mostrar_horarios()
+        
         self.mostrar_horarios_dialogo = MostrarHorariosDialogo(horarios)
         self.mostrar_horarios_dialogo.exec_()
 
@@ -410,34 +414,59 @@ class AsignarActividadDialogo(QDialog):
 class MostrarHorariosDialogo(QDialog): 
     def __init__(self, horarios, parent=None):
         super().__init__(parent)
-        self.horarios = horarios
-
         self.setWindowTitle("Mostrar Horarios")
         self.setGeometry(300, 300, 400, 300)
+        
+        self.horarios = horarios
+        
         self.initUI()
 
     def initUI(self):
-        layout = QVBoxLayout()
+        vbox = QVBoxLayout(self)
 
-        self.label = QLabel("Horarios")
-        self.label.setAlignment(Qt.AlignCenter)
-        self.label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 20px;")
-        layout.addWidget(self.label)
+        self.label_titulo = QLabel("Horarios", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        self.label_titulo.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 20px;")
+        vbox.addWidget(self.label_titulo)
 
-        self.table = QTableWidget(0, 4)
+        self.table = QTableWidget(self)
+        self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Código", "Hora Inicio", "Hora Fin", "Actividad"])
-        layout.addWidget(self.table)
 
-        for horario in self.horarios:
-            row_position = self.table.rowCount()
-            self.table.insertRow(row_position)
-            self.table.setItem(row_position, 0, QTableWidgetItem(horario.codigo_ambiente))
-            self.table.setItem(row_position, 1, QTableWidgetItem(horario.hora_inicio))
-            self.table.setItem(row_position, 2, QTableWidgetItem(horario.hora_fin))
-            self.table.setItem(row_position, 3, QTableWidgetItem(horario.actividad.nombre if horario.actividad else ""))
+        # Llenar la tabla con los datos de los horarios
+        if self.horarios:
+            self.llenar_tabla()
 
-        self.setLayout(layout)
+        vbox.addWidget(self.table)
+        self.setLayout(vbox)
+        
+    def cargar_horarios(self, csv_path_horarios):
+        try:
+            df = pd.read_csv(csv_path_horarios)
 
+            horarios = []
+            for index, row in df.iterrows():
+                horario = {
+                    'codigo_ambiente': row['Código'],
+                    'hora_inicio': row['Hora Inicio'],
+                    'hora_fin': row['Hora Fin'],
+                    'actividad': row['Actividad']
+                }
+                horarios.append(horario)
+
+            return horarios
+        except Exception as e:
+            print(f"Error al cargar los horarios desde '{csv_path_horarios}': {e}")
+            return None
+    def llenar_tabla(self):
+        self.table.setRowCount(len(self.horarios))
+
+        for i, horario in enumerate(self.horarios):
+            self.table.setItem(i, 0, QTableWidgetItem(horario['codigo_ambiente']))
+            self.table.setItem(i, 1, QTableWidgetItem(horario['hora_inicio']))
+            self.table.setItem(i, 2, QTableWidgetItem(horario['hora_fin']))
+            self.table.setItem(i, 3, QTableWidgetItem(horario['actividad']))
+            
 def main():
     app = QApplication(sys.argv)
     ventana_principal = VentanaPrincipal()
