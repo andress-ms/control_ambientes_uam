@@ -128,16 +128,17 @@ class VentanaControlAmbientes(QWidget):
             if not ambiente.empty:
                 tipo, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Tipo actual: {ambiente['tipo_ambiente'].iloc[0]}, ingrese el nuevo tipo de ambiente:")
                 if ok and tipo:
-                    disponibilidad, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Disponibilidad actual: {ambiente['estado'].iloc[0]}, ¿Está disponible? (s/n):")
+                    disponibilidad, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Disponibilidad actual: {ambiente['disponibilidad'].iloc[0]}, ¿Está disponible? (s/n):")
                     if ok:
                         disponibilidad = disponibilidad.lower() == 's'
-                        activo, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Activo actual: {ambiente['activo'].iloc[0]}, ¿Está activo? (s/n):")
+                        activo, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Estado actual: {ambiente['activo'].iloc[0]}, ¿Está activo? (s/n):")
                         if ok:
                             activo = activo.lower() == 's'
                             capacidad, ok = QInputDialog.getInt(self, "Actualizar Ambiente", f"Capacidad actual: {ambiente['capacidad'].iloc[0]}, ingrese la nueva capacidad:")
                             if ok:
-                                nuevo_ambiente = Ambiente(codigo, tipo, disponibilidad, activo, capacidad)
-                                self.gestor_ambientes.actualizar_ambiente(nuevo_ambiente)
+                                nuevo_ambiente = vars(Ambiente(codigo, tipo, disponibilidad, activo, capacidad))
+                                datos_actualizados ={k: v for k, v in nuevo_ambiente.items() if k != 'codigo_ambiente'}
+                                self.gestor_ambientes.actualizar_ambiente(codigo, datos_actualizados)
                                 QMessageBox.information(self, "Éxito", "Ambiente actualizado correctamente.")
             else:
                 QMessageBox.warning(self, "Error", f"Ambiente con código {codigo} no encontrado.")

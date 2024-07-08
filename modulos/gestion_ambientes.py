@@ -62,3 +62,26 @@ class GestorDeAmbientes:
         except ValueError as e:
             print(f"Error al filtrar ambientes: {e}")
             return pd.DataFrame()  # Devolver un DataFrame vacío en caso de error
+        
+    def buscar_ambientes_con_filtros(self, tipo, disponibilidad, activo, capacidad_min, capacidad_max):
+        #Para desactivar un filtro pasar el argumento vacio
+        ambientes_filtrados = self.ambientes_df
+
+        if tipo:
+            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['tipo'].str.contains(tipo, case=False)]
+        if disponibilidad:
+            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['disponibilidad'].str.contains(disponibilidad, case=False)]
+        if activo:
+            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['activo'].str.contains(activo, case=False)]
+        if capacidad_min:
+            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['capacidad'].astype(int) >= int(capacidad_min)]
+        if capacidad_max:
+            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['capacidad'].astype(int) <= int(capacidad_max)]
+
+        if ambientes_filtrados.empty:
+            print("No se encontraron ambientes que coincidan con los criterios de búsqueda.")
+        else:
+            print("Ambientes encontrados:")
+            print(ambientes_filtrados)
+
+        return ambientes_filtrados
