@@ -2,6 +2,7 @@ import sys
 import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
 from modulos.gestion_clases import GestorDeActividades, Actividad
 from modulos.administracion import Usuario
@@ -19,9 +20,59 @@ actividades_data=cargar_datos(csv_path_actividades, excel_path, obtener_columnas
 horarios_data=cargar_datos(csv_path_horarios, excel_path, obtener_columnas_de_clase(Horario), hoja_excel = 'Hoja 3')
 admin=Usuario(nombre='Admin', rol='administrador')
 
-class VentanaPrincipal(QMainWindow):
+class VentanaLogin(QDialog):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle('Login - Control de Ambientes UAM')
+       
+
+        self.label_usuario = QLabel('Usuario:')
+        self.edit_usuario = QLineEdit()
+        self.label_password = QLabel('Contraseña:')
+        self.input_password = QLineEdit()
+        self.btn_login = QPushButton('Iniciar Sesión')
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.label_usuario)
+        layout.addWidget(self.edit_usuario)
+        layout.addWidget(self.label_password)
+        layout.addWidget(self.input_password)
+        layout.addWidget(self.btn_login)
+        
+        self.setLayout(layout)
+
+        self.btn_login.clicked.connect(self.verificar_credenciales)
+
+    def verificar_credenciales(self):
+        usuario = self.edit_usuario.text().strip()
+        contrasena = self.input_password.text().strip()
+
+        if self.autenticar_usuario(usuario, contrasena):
+            self.accept()  
+        else:
+            QMessageBox.warning(self, 'Error de Autenticación', 'Usuario o contraseña incorrectos')
+
+    def autenticar_usuario(self, nombre_usuario, contrasena):
+       
+        if nombre_usuario == 'admin' and contrasena == 'admin1':
+            
+            self.usuario = Usuario(nombre_usuario, 'administrador')
+            return True
+        elif nombre_usuario == 'gabriel' and contrasena == 'banano':
+            # 
+            self.usuario = Usuario(nombre_usuario, 'basico')
+            return True
+        else:
+            return False
+
+    def obtener_usuario_autenticado(self):
+        return self.usuario if hasattr(self, 'usuario') and self.usuario else None
+
+
+class VentanaPrincipal(QMainWindow):
+    def __init__(self, usuario):
+        super().__init__()
+        self.usuario = usuario
         self.setWindowTitle("Control de Ambientes UAM")
         self.setGeometry(100, 100, 800, 600)
         self.initUI()
@@ -301,9 +352,13 @@ class ConsultarHorarioDialogo(QDialog):
 
         self.setLayout(layout)
 
-    def consultar(self):
+    def consultar(self, codigo_ambiente):
+        
         self.table.setRowCount(0)
-        horarios = HorariosDataFrame.obtener_horarios()  # Ajusta esta llamada según cómo obtienes los horarios
+        
+        gestor_ambientes = GestorDeAmbientes()
+        
+        horarios = HorariosDataFrame.consultar_horario(self, codigo_ambiente, gestor_ambientes) 
         for horario in horarios:
             row_position = self.table.rowCount()
             self.table.insertRow(row_position)
