@@ -1,10 +1,23 @@
 import sys
+import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit
 from PyQt5.QtCore import Qt
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
 from modulos.gestion_clases import GestorDeActividades, Actividad
 from modulos.administracion import Usuario
 from modulos.gestion_horarios import Horario, HorariosDataFrame, Actividad
+from modulos.importar_datos import cargar_datos, obtener_columnas_de_clase
+
+# Todos los archivos deben encontrarse en la carpeta data
+current_dir = os.path.dirname(os.path.abspath(__file__))
+excel_path = os.path.join(current_dir, 'data', 'database.xlsx')
+csv_path_ambientes = os.path.join(current_dir, 'data', 'lista_ambientes.csv')
+csv_path_actividades = os.path.join(current_dir, 'data', 'lista_actividades.csv')
+csv_path_horarios = os.path.join(current_dir, 'data', 'horarios.csv')
+ambientes_data=cargar_datos(csv_path_ambientes, excel_path, obtener_columnas_de_clase(Ambiente), hoja_excel="Hoja 1")
+actividades_data=cargar_datos(csv_path_actividades, excel_path, obtener_columnas_de_clase(Actividad), hoja_excel='Hoja 2')
+horarios_data=cargar_datos(csv_path_horarios, excel_path, obtener_columnas_de_clase(Horario), hoja_excel = 'Hoja 3')
+admin=Usuario(nombre='Admin', rol='administrador')
 
 class VentanaPrincipal(QMainWindow):
     def __init__(self):
@@ -56,7 +69,7 @@ class VentanaControlAmbientes(QWidget):
         self.setGeometry(200, 200, 600, 400)
 
         self.parent = parent
-        self.gestor_ambientes = GestorDeAmbientes(Usuario("NombreUsuario", "RolUsuario"))
+        self.gestor_ambientes = GestorDeAmbientes(usuario=admin,ambientes_df=ambientes_data)
 
         self.initUI()
 
@@ -134,7 +147,7 @@ class VentanaControlAmbientes(QWidget):
         if ok and codigo:
             ambiente = self.gestor_ambientes.consultar_ambiente(codigo)
             if not ambiente.empty:
-                QMessageBox.information(self, "Consulta de Ambiente", f"Tipo de Ambiente: {ambiente['tipo_ambiente'].iloc[0]}\nEstado: {ambiente['estado'].iloc[0]}\nCapacidad: {ambiente['capacidad'].iloc[0]}")
+                QMessageBox.information(self, "Consulta de Ambiente", f"Tipo de Ambiente: {ambiente['tipo_ambiente'].iloc[0]}\nEstado: {ambiente['activo'].iloc[0]}\nCapacidad: {ambiente['capacidad'].iloc[0]}\nDisponibilidad: {ambiente['disponibilidad'].iloc[0]}")
             else:
                 QMessageBox.warning(self, "Error", f"Ambiente con código {codigo} no encontrado.")
 
@@ -144,7 +157,7 @@ class VentanaControlActividades(QWidget):
         self.setWindowTitle("Control de Actividades")
         self.setGeometry(200, 200, 600, 400)
 
-        self.gestor_actividades = GestorDeActividades(Usuario("NombreUsuario", "RolUsuario"))
+        self.gestor_actividades = GestorDeActividades(usuario=admin,actividades_df=actividades_data)
 
         self.initUI()
 
@@ -219,9 +232,9 @@ class VentanaControlHorarios(QWidget):
         self.setWindowTitle("Control de Horarios")
         self.setGeometry(200, 200, 600, 400)
 
-        self.gestor_actividades = GestorDeActividades(Usuario("NombreUsuario", "RolUsuario"))
-        self.gestor_ambientes = GestorDeAmbientes(Usuario("NombreUsuario", "RolUsuario"))
-        self.horarios_df = HorariosDataFrame()
+        self.gestor_actividades = GestorDeActividades(usuario=admin, actividades_df=actividades_data)
+        self.gestor_ambientes = GestorDeAmbientes(usuario=admin, ambientes_df=ambientes_data)
+        self.horarios_df = HorariosDataFrame(horarios_data)
         
         self.initUI()
 

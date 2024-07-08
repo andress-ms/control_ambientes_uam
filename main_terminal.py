@@ -23,7 +23,6 @@ actividades_data = cargar_datos(csv_path_actividades, excel_path, obtener_column
 
 gestor_clases = GestorDeActividades(usuario=admin, actividades_df=actividades_data)
 
-horarios_contenedor = HorariosDataFrame()
 horarios_data = cargar_datos(csv_path_horarios, excel_path, obtener_columnas_de_clase(Horario), hoja_excel = 'Hoja 3')
 
 horarios_contenedor = HorariosDataFrame(horarios_df=horarios_data)
