@@ -1,5 +1,5 @@
-codigo_ambiente,tipo_ambiente,disponibilidad,activo,capacidad
-C102,Auditorio,Disponible,Activo,20
-B103,Aula,Disponible,Activo,40
-B105,Aula,Disponible,Activo,30
-C201,Aula,Disponible,Activo,25
+codigo_ambiente,tipo_ambiente,activo,capacidad
+C102,Auditorio,Activo,20
+B105,Aula,Activo,30
+C201,Aula,Activo,25
+B201,Aula,Activo,20

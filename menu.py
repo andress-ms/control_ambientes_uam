@@ -134,6 +134,7 @@ class VentanaControlAmbientes(QWidget):
         self.btn_eliminar = QPushButton("Eliminar Ambiente", self)
         self.btn_actualizar = QPushButton("Actualizar Ambiente", self)
         self.btn_consultar = QPushButton("Consultar Ambiente", self)
+        self.btn_mostrar_ambientes_disponibles = QPushButton("Mostrar Ambientes Disponibles", self)
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.label_titulo)
@@ -141,6 +142,7 @@ class VentanaControlAmbientes(QWidget):
         vbox.addWidget(self.btn_eliminar)
         vbox.addWidget(self.btn_actualizar)
         vbox.addWidget(self.btn_consultar)
+        vbox.addWidget(self.btn_mostrar_ambientes_disponibles)
         vbox.addStretch()
 
         self.setLayout(vbox)
@@ -149,29 +151,33 @@ class VentanaControlAmbientes(QWidget):
         self.btn_eliminar.clicked.connect(self.eliminar_ambiente)
         self.btn_actualizar.clicked.connect(self.actualizar_ambiente)
         self.btn_consultar.clicked.connect(self.consultar_ambiente)
+        self.btn_mostrar_ambientes_disponibles.clicked.connect(self.mostrar_ambientes_disponibles)
 
     def agregar_ambiente(self):
         codigo, ok = QInputDialog.getText(self, "Agregar Ambiente", "Ingrese el código del ambiente:")
         if ok and codigo:
             tipo, ok = QInputDialog.getText(self, "Agregar Ambiente", "Ingrese el tipo de ambiente:")
             if ok and tipo:
-                disponibilidad, ok = QInputDialog.getText(self, "Agregar Ambiente", "¿Está disponible? (s/n):")
+                activo, ok = QInputDialog.getText(self, "Agregar Ambiente", "¿Está activo? (s/n):")
                 if ok:
-                    disponibilidad = disponibilidad.lower() == 's'
-                    activo, ok = QInputDialog.getText(self, "Agregar Ambiente", "¿Está activo? (s/n):")
+                    activo = activo.lower() == 's'
+                    capacidad, ok = QInputDialog.getInt(self, "Agregar Ambiente", "Ingrese la capacidad:")
                     if ok:
-                        activo = activo.lower() == 's'
-                        capacidad, ok = QInputDialog.getInt(self, "Agregar Ambiente", "Ingrese la capacidad:")
-                        if ok:
-                            nuevo_ambiente = Ambiente(codigo, tipo, disponibilidad, activo, capacidad)
-                            self.gestor_ambientes.agregar_ambiente(nuevo_ambiente)
-                            QMessageBox.information(self, "Éxito", "Ambiente agregado correctamente.")
+                        nuevo_ambiente = Ambiente(codigo, tipo, activo, capacidad)
+                        self.gestor_ambientes.agregar_ambiente(nuevo_ambiente)
+                        self.exportar_ambientes()
+                        QMessageBox.information(self, "Éxito", "Ambiente agregado correctamente.")
+                        
+
 
     def eliminar_ambiente(self):
         codigo, ok = QInputDialog.getText(self, "Eliminar Ambiente", "Ingrese el código del ambiente a eliminar:")
         if ok and codigo:
             self.gestor_ambientes.eliminar_ambiente(codigo)
             QMessageBox.information(self, "Éxito", "Ambiente eliminado correctamente.")
+            self.exportar_ambientes()
+            self.mostrar_ambientes_disponibles()
+            
 
     def actualizar_ambiente(self):
         codigo, ok = QInputDialog.getText(self, "Actualizar Ambiente", "Ingrese el código del ambiente a actualizar:")
@@ -180,30 +186,81 @@ class VentanaControlAmbientes(QWidget):
             if not ambiente.empty:
                 tipo, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Tipo actual: {ambiente['tipo_ambiente'].iloc[0]}, ingrese el nuevo tipo de ambiente:")
                 if ok and tipo:
-                    disponibilidad, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Disponibilidad actual: {ambiente['disponibilidad'].iloc[0]}, ¿Está disponible? (s/n):")
+                    activo, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Estado actual: {ambiente['activo'].iloc[0]}, ¿Está activo? (s/n):")
                     if ok:
-                        disponibilidad = disponibilidad.lower() == 's'
-                        activo, ok = QInputDialog.getText(self, "Actualizar Ambiente", f"Estado actual: {ambiente['activo'].iloc[0]}, ¿Está activo? (s/n):")
+                        activo = activo.lower() == 's'
+                        capacidad, ok = QInputDialog.getInt(self, "Actualizar Ambiente", f"Capacidad actual: {ambiente['capacidad'].iloc[0]}, ingrese la nueva capacidad:")
                         if ok:
-                            activo = activo.lower() == 's'
-                            capacidad, ok = QInputDialog.getInt(self, "Actualizar Ambiente", f"Capacidad actual: {ambiente['capacidad'].iloc[0]}, ingrese la nueva capacidad:")
-                            if ok:
-                                nuevo_ambiente = vars(Ambiente(codigo, tipo, disponibilidad, activo, capacidad))
-                                datos_actualizados ={k: v for k, v in nuevo_ambiente.items() if k != 'codigo_ambiente'}
-                                self.gestor_ambientes.actualizar_ambiente(codigo, datos_actualizados)
-                                QMessageBox.information(self, "Éxito", "Ambiente actualizado correctamente.")
+                            nuevo_ambiente = vars(Ambiente(codigo, tipo, activo, capacidad))
+                            datos_actualizados = {k: v for k, v in nuevo_ambiente.items() if k != 'codigo_ambiente'}
+                            self.gestor_ambientes.actualizar_ambiente(codigo, datos_actualizados)
+                            QMessageBox.information(self, "Éxito", "Ambiente actualizado correctamente.")
+                            self.exportar_ambientes()
+                            self.mostrar_ambientes_disponibles()
+                            
             else:
                 QMessageBox.warning(self, "Error", f"Ambiente con código {codigo} no encontrado.")
+
 
     def consultar_ambiente(self):
         codigo, ok = QInputDialog.getText(self, "Consultar Ambiente", "Ingrese el código del ambiente a consultar:")
         if ok and codigo:
             ambiente = self.gestor_ambientes.consultar_ambiente(codigo)
             if not ambiente.empty:
-                QMessageBox.information(self, "Consulta de Ambiente", f"Tipo de Ambiente: {ambiente['tipo_ambiente'].iloc[0]}\nEstado: {ambiente['activo'].iloc[0]}\nCapacidad: {ambiente['capacidad'].iloc[0]}\nDisponibilidad: {ambiente['disponibilidad'].iloc[0]}")
+                QMessageBox.information(self, "Consulta de Ambiente", f"Tipo de Ambiente: {ambiente['tipo_ambiente'].iloc[0]}\nEstado: {ambiente['activo'].iloc[0]}\nCapacidad: {ambiente['capacidad'].iloc[0]}")
             else:
                 QMessageBox.warning(self, "Error", f"Ambiente con código {codigo} no encontrado.")
+    def mostrar_ambientes_disponibles(self):
+        try:
+            ambientes_disponibles = self.gestor_ambientes.mostrar_ambientes_disponibles()
+            if not ambientes_disponibles.empty:
+                self.mostrar_ambientes_dialogo = MostrarAmbientesDialogo(ambientes_disponibles)
+                self.mostrar_ambientes_dialogo.exec_()
+            else:
+                print("No hay ambientes disponibles para mostrar.")
+        except Exception as e:
+            print(f"Error al mostrar los ambientes disponibles: {e}")
+    def exportar_ambientes(self):
+        self.gestor_ambientes.exportar_a_csv(csv_path_ambientes)
+            
+class MostrarAmbientesDialogo(QDialog):
+    def __init__(self, ambientes_df, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Mostrar Ambientes Disponibles")
+        self.setGeometry(300, 300, 800, 600)
+        
+        self.ambientes_df = ambientes_df
+        
+        self.initUI()
 
+    def initUI(self):
+        vbox = QVBoxLayout(self)
+
+        self.label_titulo = QLabel("Ambientes Disponibles", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        self.label_titulo.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 20px;")
+        vbox.addWidget(self.label_titulo)
+
+        self.table = QTableWidget(self)
+        
+        if not self.ambientes_df.empty:
+            self.table.setColumnCount(len(self.ambientes_df.columns))
+            self.table.setHorizontalHeaderLabels(self.ambientes_df.columns.tolist())
+            self.llenar_tabla()
+        else:
+            self.table.setColumnCount(1)
+            self.table.setHorizontalHeaderLabels(["No hay ambientes disponibles"])
+
+        vbox.addWidget(self.table)
+        self.setLayout(vbox)
+        
+    def llenar_tabla(self):
+        self.table.setRowCount(len(self.ambientes_df))
+
+        for i, row in self.ambientes_df.iterrows():
+            for j, (column, value) in enumerate(row.items()):
+                self.table.setItem(i, j, QTableWidgetItem(str(value)))
+                
 class VentanaControlActividades(QWidget):
     def __init__(self, parent=None):
         super().__init__()
@@ -276,6 +333,7 @@ class VentanaControlActividades(QWidget):
                 QMessageBox.information(self, "Consulta de Actividad", f"Nombre de Actividad: {actividad.nombre}\nTipo: {actividad.tipo}")
             else:
                 QMessageBox.warning(self, "Error", f"Actividad con nombre {nombre} no encontrada.")
+                
         
     
 

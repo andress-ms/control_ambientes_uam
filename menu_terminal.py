@@ -29,10 +29,9 @@ def mostrar_menu():
 def agregar_ambiente_menu(gestor_ambientes: GestorDeAmbientes):
     codigo = input("Ingrese el código del ambiente: ")
     tipo = input("Ingrese el tipo de ambiente: ")
-    disponibilidad = input("¿Está disponible? (s/n): ").lower() == 's'
     activo = input("¿Está activo? (s/n): ").lower() == 's'
     capacidad = int(input("Ingrese la capacidad: "))
-    nuevo_ambiente = Ambiente(codigo, tipo, disponibilidad, activo, capacidad)
+    nuevo_ambiente = Ambiente(codigo, tipo, activo, capacidad)
     gestor_ambientes.agregar_ambiente(nuevo_ambiente)
     print("Ambiente agregado.")
 
@@ -98,15 +97,7 @@ def manejar_opcion(opcion, gestor_ambientes: GestorDeAmbientes, gestor_clases: G
         print("Deje el campo en blanco si no desea aplicar ese filtro.")
 
         tipo = input("Ingrese el tipo de aula: ")
-
-        disponibilidad = input("Disponible: s/n: ").strip().upper()
-        if disponibilidad == 'S':
-            disponibilidad = 'Disponible'
-        elif disponibilidad == 'N':
-            disponibilidad = 'No disponible'
-        else:
-            disponibilidad = None
-
+        
         activo = input("Activo: s/n: ").strip().upper()
         if activo == 'S':
             activo = 'Activo'
@@ -131,7 +122,7 @@ def manejar_opcion(opcion, gestor_ambientes: GestorDeAmbientes, gestor_clases: G
         if capacidad_min is not None and capacidad_max is not None and capacidad_min > capacidad_max:
             print("Error: La capacidad mínima no puede ser mayor que la capacidad máxima.")
         else:
-            ambientes_filtrados = gestor_ambientes.buscar_ambientes_con_filtros(tipo, disponibilidad, activo, capacidad_min, capacidad_max)
+            ambientes_filtrados = gestor_ambientes.buscar_ambientes_con_filtros(tipo, activo, capacidad_min, capacidad_max)
             if ambientes_filtrados.empty:
                 print("No se encontraron ambientes que coincidan con los criterios de búsqueda.")
             else:

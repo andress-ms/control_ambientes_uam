@@ -3,10 +3,9 @@ from modulos.administracion import Usuario, exportar_dataframe_a_csv
 from modulos.gestion_clases import Actividad
 
 class Ambiente:
-    def __init__(self, codigo_ambiente, tipo_ambiente, disponibilidad, activo, capacidad):
+    def __init__(self, codigo_ambiente, tipo_ambiente, activo, capacidad):
         self.codigo_ambiente = codigo_ambiente
         self.tipo_ambiente = tipo_ambiente
-        self.disponibilidad = "Disponible" if disponibilidad else "No disponible"
         self.activo = "Activo" if activo else "Inactivo"
         self.capacidad = capacidad
 
@@ -14,7 +13,7 @@ class GestorDeAmbientes:
     def __init__(self, usuario: Usuario, ambientes_df=None):
         self.usuario = usuario
         if ambientes_df is None:
-            self.ambientes_df = pd.DataFrame(columns=['codigo_ambiente', 'tipo_ambiente', 'disponibilidad', 'activo', 'capacidad'])
+            self.ambientes_df = pd.DataFrame(columns=['codigo_ambiente', 'tipo_ambiente', 'activo', 'capacidad'])
         else:
             self.ambientes_df = ambientes_df
             
@@ -30,6 +29,7 @@ class GestorDeAmbientes:
     def eliminar_ambiente(self, codigo_ambiente: str) -> None:
         self._verificar_permiso()
         self.ambientes_df.drop(self.ambientes_df[self.ambientes_df['codigo_ambiente'] == codigo_ambiente].index, inplace=True)
+        self.ambientes_df.reset_index(drop=True, inplace=True)
     
     def actualizar_ambiente(self, codigo_ambiente: str, datos_actualizados: dict) -> None:
         self._verificar_permiso()
@@ -54,7 +54,6 @@ class GestorDeAmbientes:
             actividad_tamano = int(actividad.tamaño)
 
             ambientes_filtrados = self.ambientes_df[
-                (self.ambientes_df['disponibilidad'] == "Disponible") &
                 (self.ambientes_df['activo'] == "Activo") &
                 (self.ambientes_df['capacidad'].astype(int) >= actividad_tamano)
             ]
@@ -63,14 +62,12 @@ class GestorDeAmbientes:
             print(f"Error al filtrar ambientes: {e}")
             return pd.DataFrame()  # Devolver un DataFrame vacío en caso de error
         
-    def buscar_ambientes_con_filtros(self, tipo, disponibilidad, activo, capacidad_min, capacidad_max):
-        #Para desactivar un filtro pasar el argumento vacio
+    def buscar_ambientes_con_filtros(self, tipo, activo, capacidad_min, capacidad_max):
+        #Para desactivar un filtro pasar el argumento vacío
         ambientes_filtrados = self.ambientes_df
 
         if tipo:
-            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['tipo'].str.contains(tipo, case=False)]
-        if disponibilidad:
-            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['disponibilidad'].str.contains(disponibilidad, case=False)]
+            ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['tipo_ambiente'].str.contains(tipo, case=False)]
         if activo:
             ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['activo'].str.contains(activo, case=False)]
         if capacidad_min:
@@ -78,6 +75,11 @@ class GestorDeAmbientes:
         if capacidad_max:
             ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['capacidad'].astype(int) <= int(capacidad_max)]
 
-        
-
         return ambientes_filtrados
+    
+    def mostrar_ambientes_disponibles(self) -> pd.DataFrame:
+        # Asumimos que "disponible" significa "activo" en este contexto
+        ambientes_disponibles = self.ambientes_df[
+            (self.ambientes_df['activo'] == "Activo")
+        ]
+        return ambientes_disponibles

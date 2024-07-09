@@ -8,4 +8,4 @@ class Usuario:
     
 def exportar_dataframe_a_csv(dataframe, nombre_archivo):
     dataframe.to_csv(nombre_archivo, index=False)
-    print(f"DataFrame exportado a {nombre_archivo}")
+
