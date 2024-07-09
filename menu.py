@@ -1,7 +1,7 @@
 import sys
 import os
 import pandas as pd
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit, QHBoxLayout, QComboBox
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
@@ -76,6 +76,11 @@ class VentanaPrincipal(QMainWindow):
         self.usuario = usuario
         self.setWindowTitle("Control de Ambientes UAM")
         self.setGeometry(100, 100, 800, 600)
+        
+        self.gestor_actividades = GestorDeActividades(usuario=admin, actividades_df=actividades_data)
+        self.gestor_ambientes = GestorDeAmbientes(usuario=admin, ambientes_df=ambientes_data)
+        self.horarios_df = HorariosDataFrame(horarios_data)
+        
         self.initUI()
 
     def initUI(self):
@@ -128,7 +133,7 @@ class VentanaControlAmbientes(QWidget):
         self.regreso_button.clicked.connect(self.regresar)
         
         self.parent = parent
-        self.gestor_ambientes = GestorDeAmbientes(usuario=admin,ambientes_df=ambientes_data)
+        self.gestor_ambientes = ventana_principal.gestor_ambientes
         
                  
         self.initUI()
@@ -143,6 +148,7 @@ class VentanaControlAmbientes(QWidget):
         self.btn_actualizar = QPushButton("Actualizar Ambiente", self)
         self.btn_consultar = QPushButton("Consultar Ambiente", self)
         self.btn_mostrar_ambientes_disponibles = QPushButton("Mostrar Ambientes Disponibles", self)
+        self.btn_buscar_con_filtros = QPushButton("Buscar con Filtros", self)
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.label_titulo)
@@ -151,6 +157,7 @@ class VentanaControlAmbientes(QWidget):
         vbox.addWidget(self.btn_actualizar)
         vbox.addWidget(self.btn_consultar)
         vbox.addWidget(self.btn_mostrar_ambientes_disponibles)
+        vbox.addWidget(self.btn_buscar_con_filtros)
         vbox.addStretch()
         
         hbox = QHBoxLayout()
@@ -159,7 +166,6 @@ class VentanaControlAmbientes(QWidget):
         hbox.addStretch()
 
         vbox.addLayout(hbox)
-
         self.setLayout(vbox)
 
         self.btn_agregar.clicked.connect(self.agregar_ambiente)
@@ -167,6 +173,7 @@ class VentanaControlAmbientes(QWidget):
         self.btn_actualizar.clicked.connect(self.actualizar_ambiente)
         self.btn_consultar.clicked.connect(self.consultar_ambiente)
         self.btn_mostrar_ambientes_disponibles.clicked.connect(self.mostrar_ambientes_disponibles)
+        self.btn_buscar_con_filtros.clicked.connect(self.buscar_con_filtros)
         
     def regresar(self):
         self.ventana_principal.show()  
@@ -187,8 +194,6 @@ class VentanaControlAmbientes(QWidget):
                         self.exportar_ambientes()
                         QMessageBox.information(self, "Éxito", "Ambiente agregado correctamente.")
                         
-
-
     def eliminar_ambiente(self):
         codigo, ok = QInputDialog.getText(self, "Eliminar Ambiente", "Ingrese el código del ambiente a eliminar:")
         if ok and codigo:
@@ -239,8 +244,30 @@ class VentanaControlAmbientes(QWidget):
                 print("No hay ambientes disponibles para mostrar.")
         except Exception as e:
             print(f"Error al mostrar los ambientes disponibles: {e}")
+            
     def exportar_ambientes(self):
         self.gestor_ambientes.exportar_a_csv(csv_path_ambientes)
+    
+    def buscar_con_filtros(self):
+        tipo, ok_tipo = QInputDialog.getText(self, "Filtro por Tipo", "Ingrese el tipo de ambiente:")
+        activo, ok_activo = QInputDialog.getText(self, "Filtro por Estado", "¿Está activo? (s/n):")
+        capacidad_min, ok_cap_min = QInputDialog.getInt(self, "Filtro por Capacidad Mínima", "Ingrese la capacidad mínima:")
+        capacidad_max, ok_cap_max = QInputDialog.getInt(self, "Filtro por Capacidad Máxima", "Ingrese la capacidad máxima:")
+
+        if ok_tipo or ok_activo or ok_cap_min or ok_cap_max:
+            ambientes_filtrados = self.gestor_ambientes.buscar_ambientes_con_filtros(
+                tipo if ok_tipo else "",
+                activo if ok_activo else "",
+                capacidad_min if ok_cap_min else "",
+                capacidad_max if ok_cap_max else ""
+            )
+            self.mostrar_resultados_busqueda(ambientes_filtrados)
+        else:
+            QMessageBox.warning(self, "Filtros Vacíos", "No se aplicaron filtros de búsqueda.")
+
+    def mostrar_resultados_busqueda(self, ambientes_df):
+        self.mostrar_ambientes_dialogo = MostrarAmbientesDialogo(ambientes_df)
+        self.mostrar_ambientes_dialogo.exec_()
             
 class MostrarAmbientesDialogo(QDialog):
     def __init__(self, ambientes_df, parent=None):
@@ -287,7 +314,7 @@ class VentanaControlActividades(QWidget):
         self.setWindowTitle("Control de Actividades")
         self.setGeometry(200, 200, 600, 400)
 
-        self.gestor_actividades = GestorDeActividades(usuario=admin,actividades_df=actividades_data)
+        self.gestor_actividades = ventana_principal.gestor_actividades
         
         self.regreso_button = QPushButton("Regresar")
         self.regreso_button.clicked.connect(self.regresar)
@@ -374,15 +401,16 @@ class VentanaControlActividades(QWidget):
 class VentanaControlHorarios(QWidget):
     def __init__(self, ventana_principal, parent=None):
         super().__init__(parent)
+        self.ventana_principal = ventana_principal
         self.setWindowTitle("Control de Horarios")
         self.setGeometry(200, 200, 600, 400)
 
         self.regreso_button = QPushButton("Regresar")
         self.regreso_button.clicked.connect(self.regresar)
         
-        self.gestor_actividades = GestorDeActividades(usuario=admin, actividades_df=actividades_data)
-        self.gestor_ambientes = GestorDeAmbientes(usuario=admin, ambientes_df=ambientes_data)
-        self.horarios_df = HorariosDataFrame(horarios_data)
+        self.gestor_actividades = ventana_principal.gestor_actividades
+        self.gestor_ambientes = ventana_principal.gestor_ambientes
+        self.horarios_df = ventana_principal.horarios_df
         
         self.initUI()
 
@@ -420,11 +448,11 @@ class VentanaControlHorarios(QWidget):
         self.close()
              
     def consultar_horario(self):
-        self.consultar_horario_dialogo = ConsultarHorarioDialogo(self.gestor_ambientes, self.gestor_actividades)
+        self.consultar_horario_dialogo = ConsultarHorarioDialogo(self.gestor_ambientes, self.gestor_actividades, self.horarios_df)
         self.consultar_horario_dialogo.exec_()
 
     def asignar_actividad(self):
-        self.asignar_actividad_dialogo = AsignarActividadDialogo(self.gestor_ambientes, self.gestor_actividades)
+        self.asignar_actividad_dialogo = AsignarActividadDialogo(self.gestor_ambientes, self.gestor_actividades, self.horarios_df)
         self.asignar_actividad_dialogo.exec_()
     
     def mostrar_horarios(self):
@@ -438,10 +466,11 @@ class VentanaControlHorarios(QWidget):
             print(f"Error al mostrar los horarios: {e}")
 
 class ConsultarHorarioDialogo(QDialog):
-    def __init__(self, gestor_ambientes, gestor_actividades, parent=None):
+    def __init__(self, gestor_ambientes, gestor_actividades, horarios_df, parent=None):
         super().__init__(parent)
         self.gestor_ambientes = gestor_ambientes
         self.gestor_actividades = gestor_actividades
+        self.horarios_df = horarios_df
 
         self.setWindowTitle("Consultar Horario")
         self.setGeometry(300, 300, 400, 300)
@@ -481,10 +510,11 @@ class ConsultarHorarioDialogo(QDialog):
             self.table.setItem(row_position, 3, QTableWidgetItem(horario.actividad.nombre if horario.actividad else ""))
 
 class AsignarActividadDialogo(QDialog):
-    def __init__(self, gestor_ambientes, gestor_actividades, parent=None):
+    def __init__(self, gestor_ambientes, gestor_actividades, horarios_df, parent=None):
         super().__init__(parent)
         self.gestor_ambientes = gestor_ambientes
         self.gestor_actividades = gestor_actividades
+        self.horarios_df = horarios_df
 
         self.setWindowTitle("Asignar Actividad")
         self.setGeometry(300, 300, 400, 300)
@@ -509,14 +539,17 @@ class AsignarActividadDialogo(QDialog):
         if ok and codigo_ambiente:
             ambiente = self.gestor_ambientes.consultar_ambiente(codigo_ambiente)
             if not ambiente.empty:
-                actividad_nombre, ok = QInputDialog.getText(self, "Asignar Actividad", "Ingrese el nombre de la actividad:")
-                if ok and actividad_nombre:
-                    actividad = self.gestor_actividades.consultar_actividad(actividad_nombre)
-                    if actividad is not None:
-                        self.gestor_ambientes.asignar_actividad(codigo_ambiente, actividad)
-                        QMessageBox.information(self, "Éxito", "Actividad asignada correctamente.")
-                    else:
-                        QMessageBox.warning(self, "Error", f"Actividad con nombre {actividad_nombre} no encontrada.")
+                periodo, ok = QInputDialog.getText(self, "Asignar Actividad", "Ingrese el período (e.g., '8-8:50 AM'): ")
+                if ok and periodo:
+                    codigo_actividad, ok = QInputDialog.getText(self, "Asignar Actividad", "Ingrese el código de la actividad:")
+                    if ok and codigo_actividad:
+                        actividad = self.gestor_actividades.consultar_actividad(codigo_actividad)
+                        if not actividad.empty:
+                            actividad_obj = Actividad(**actividad.iloc[0].to_dict())
+                            self.horarios_df.asignar_actividad_a_ambiente(codigo_ambiente, periodo, actividad_obj, self.gestor_ambientes)
+                            QMessageBox.information(self, "Éxito", "Actividad asignada correctamente.")
+                        else:
+                            QMessageBox.warning(self, "Error", f"Actividad con código {codigo_actividad} no encontrada.")
             else:
                 QMessageBox.warning(self, "Error", f"Ambiente con código {codigo_ambiente} no encontrado.")
 

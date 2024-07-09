@@ -75,6 +75,8 @@ class GestorDeAmbientes:
         if capacidad_max:
             ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['capacidad'].astype(int) <= int(capacidad_max)]
 
+        ambientes_filtrados.reset_index(drop=True, inplace=True)
+        
         return ambientes_filtrados
     
     def mostrar_ambientes_disponibles(self) -> pd.DataFrame:
