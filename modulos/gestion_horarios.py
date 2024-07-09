@@ -124,6 +124,16 @@ class HorariosDataFrame:
         print("No se encontró el horario para el ambiente")
         return False   
     
+    def obtener_periodos_libres(self, ambiente_codigo: str, duracion: int, gestor_ambientes: 'GestorDeAmbientes') -> list:
+        horario = self.consultar_horario(ambiente_codigo, gestor_ambientes)
+        periodos_libres = []
+        if horario:
+            periodos_lista = list(horario.periodos.keys())
+            for i in range(len(periodos_lista) - duracion + 1):
+                if all(horario.periodos[periodos_lista[i + j]] is None for j in range(duracion)):
+                    periodos_libres.append(periodos_lista[i])
+        return periodos_libres
+    
     def asignar_actividad_a_ambiente(self, ambiente_codigo: str, periodo_inicio: str, actividad: Actividad, gestor_ambientes: GestorDeAmbientes):
         if self.verificar_disponibilidad(ambiente_codigo, periodo_inicio, actividad.duracion, gestor_ambientes):
             horario = self.consultar_horario(ambiente_codigo, gestor_ambientes)
@@ -136,14 +146,16 @@ class HorariosDataFrame:
 
     def mostrar_ambientes_disponibles(self, actividad: Actividad, gestor_ambientes: GestorDeAmbientes):
         ambientes_disponibles = gestor_ambientes.filtrar_ambientes_para_actividad(actividad)
-        
+
         if ambientes_disponibles.empty:
             print("No hay ambientes disponibles que cumplan con los requisitos de la actividad.")
         else:
             print("Ambientes disponibles para la actividad:")
             for i, ambiente in ambientes_disponibles.iterrows():
-                print(f"{i}. {ambiente['codigo_ambiente']} - Tipo: {ambiente['tipo_ambiente']}, Capacidad: {ambiente['capacidad']}")
-        
+                periodos_libres = self.obtener_periodos_libres(ambiente['codigo_ambiente'], actividad.duracion, gestor_ambientes)
+                periodos_libres_str = ', '.join(periodos_libres) if periodos_libres else 'No hay periodos libres'
+                print(f"{i}. {ambiente['codigo_ambiente']} - Tipo: {ambiente['tipo_ambiente']}, Capacidad: {ambiente['capacidad']} \nPeriodos libres: {periodos_libres_str}")
+
         return ambientes_disponibles['codigo_ambiente'].tolist()
 
     def seleccionar_ambiente_asignar_actividad(self, actividad: Actividad, gestor_ambientes: GestorDeAmbientes):
@@ -151,7 +163,6 @@ class HorariosDataFrame:
         opcion = input("Seleccione el número del ambiente donde desea asignar la actividad: ")
 
         try:
-            print(ambientes_disponibles)
             opcion = int(opcion)
             if opcion > 0 and opcion <= len(ambientes_disponibles):
                 ambiente_seleccionado = ambientes_disponibles[opcion - 1]

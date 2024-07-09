@@ -78,10 +78,6 @@ class GestorDeAmbientes:
         if capacidad_max:
             ambientes_filtrados = ambientes_filtrados[ambientes_filtrados['capacidad'].astype(int) <= int(capacidad_max)]
 
-        if ambientes_filtrados.empty:
-            print("No se encontraron ambientes que coincidan con los criterios de búsqueda.")
-        else:
-            print("Ambientes encontrados:")
-            print(ambientes_filtrados)
+        
 
         return ambientes_filtrados

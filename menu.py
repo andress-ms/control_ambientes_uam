@@ -60,7 +60,7 @@ class VentanaLogin(QDialog):
             self.usuario = Usuario(nombre_usuario, 'administrador')
             return True
         elif nombre_usuario == 'gabriel' and contrasena == 'banano':
-            # 
+             
             self.usuario = Usuario(nombre_usuario, 'basico')
             return True
         else:
@@ -322,12 +322,14 @@ class VentanaControlHorarios(QWidget):
         self.asignar_actividad_dialogo.exec_()
     
     def mostrar_horarios(self):
-        horarios_data = pd.read_csv(csv_path_horarios)
-        horarios_df = HorariosDataFrame(horarios_data)
-        horarios = horarios_df.mostrar_horarios()
-        
-        self.mostrar_horarios_dialogo = MostrarHorariosDialogo(horarios)
-        self.mostrar_horarios_dialogo.exec_()
+        try:
+            if not self.horarios_df.horarios_df.empty:
+                self.mostrar_horarios_dialogo = MostrarHorariosDialogo(self.horarios_df.horarios_df)
+                self.mostrar_horarios_dialogo.exec_()
+            else:
+                print("No hay horarios disponibles para mostrar.")
+        except Exception as e:
+            print(f"Error al mostrar los horarios: {e}")
 
 class ConsultarHorarioDialogo(QDialog):
     def __init__(self, gestor_ambientes, gestor_actividades, parent=None):
@@ -412,13 +414,16 @@ class AsignarActividadDialogo(QDialog):
             else:
                 QMessageBox.warning(self, "Error", f"Ambiente con código {codigo_ambiente} no encontrado.")
 
-class MostrarHorariosDialogo(QDialog): 
-    def __init__(self, horarios, parent=None):
+class MostrarHorariosDialogo(QDialog):
+    def __init__(self, horarios_df, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Mostrar Horarios")
-        self.setGeometry(300, 300, 400, 300)
+        self.setGeometry(300, 300, 800, 600)
         
-        self.horarios = horarios
+        if horarios_df is not None:
+            self.horarios_df = horarios_df.fillna('-')
+        else:
+            self.horarios_df = pd.DataFrame()  # Crear un DataFrame vacío para evitar errores
         
         self.initUI()
 
@@ -431,43 +436,25 @@ class MostrarHorariosDialogo(QDialog):
         vbox.addWidget(self.label_titulo)
 
         self.table = QTableWidget(self)
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Código", "Hora Inicio", "Hora Fin", "Actividad"])
-
-        # Llenar la tabla con los datos de los horarios
-        if self.horarios:
+        
+        if not self.horarios_df.empty:
+            self.table.setColumnCount(len(self.horarios_df.columns) + 1)
+            self.table.setHorizontalHeaderLabels(["Ambiente"] + list(self.horarios_df.columns))
             self.llenar_tabla()
+        else:
+            self.table.setColumnCount(1)
+            self.table.setHorizontalHeaderLabels(["No hay horarios disponibles"])
 
         vbox.addWidget(self.table)
-        self.setLayout(vbox)
         
-    def cargar_horarios(self, csv_path_horarios):
-        try:
-            df = pd.read_csv(csv_path_horarios)
-
-            horarios = []
-            for index, row in df.iterrows():
-                horario = {
-                    'codigo_ambiente': row['Código'],
-                    'hora_inicio': row['Hora Inicio'],
-                    'hora_fin': row['Hora Fin'],
-                    'actividad': row['Actividad']
-                }
-                horarios.append(horario)
-
-            return horarios
-        except Exception as e:
-            print(f"Error al cargar los horarios desde '{csv_path_horarios}': {e}")
-            return None
     def llenar_tabla(self):
-        self.table.setRowCount(len(self.horarios))
+        self.table.setRowCount(len(self.horarios_df))
 
-        for i, horario in enumerate(self.horarios):
-            self.table.setItem(i, 0, QTableWidgetItem(horario['codigo_ambiente']))
-            self.table.setItem(i, 1, QTableWidgetItem(horario['hora_inicio']))
-            self.table.setItem(i, 2, QTableWidgetItem(horario['hora_fin']))
-            self.table.setItem(i, 3, QTableWidgetItem(horario['actividad']))
-            
+        for i, (ambiente, row) in enumerate(self.horarios_df.iterrows()):
+            self.table.setItem(i, 0, QTableWidgetItem(ambiente))
+            for j, (periodo, actividad) in enumerate(row.items(), start=1):
+                self.table.setItem(i, j, QTableWidgetItem(actividad))
+                
 def main():
     app = QApplication(sys.argv)
     ventana_principal = VentanaPrincipal()

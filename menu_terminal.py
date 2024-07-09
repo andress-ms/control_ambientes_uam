@@ -23,7 +23,8 @@ def mostrar_menu():
     print("5. Asignar Actividad a Horario")
     print("6. Mostrar Horarios")
     print("7. Asignar aula y horario a actividad")
-    print("8. Salir")
+    print("8. Busqueda de ambientes con filtro. ")
+    print("9. Salir")
 
 def agregar_ambiente_menu(gestor_ambientes: GestorDeAmbientes):
     codigo = input("Ingrese el código del ambiente: ")
@@ -93,6 +94,50 @@ def manejar_opcion(opcion, gestor_ambientes: GestorDeAmbientes, gestor_clases: G
         else:
                 print("No se encontró la actividad.")
     elif opcion == '8':
+        print("Busqueda por filtros, escriba el el valor por el cual desea filtrar los ambientes.")
+        print("Deje el campo en blanco si no desea aplicar ese filtro.")
+
+        tipo = input("Ingrese el tipo de aula: ")
+
+        disponibilidad = input("Disponible: s/n: ").strip().upper()
+        if disponibilidad == 'S':
+            disponibilidad = 'Disponible'
+        elif disponibilidad == 'N':
+            disponibilidad = 'No disponible'
+        else:
+            disponibilidad = None
+
+        activo = input("Activo: s/n: ").strip().upper()
+        if activo == 'S':
+            activo = 'Activo'
+        elif activo == 'N':
+            activo = 'Inactivo'
+        else:
+            activo = None
+
+        capacidad_min_input = input("Ingrese la capacidad mínima del ambiente: ").strip()
+        if capacidad_min_input.isdigit():
+            capacidad_min = int(capacidad_min_input)
+        else:
+            capacidad_min = None
+
+        capacidad_max_input = input("Ingrese la capacidad máxima del ambiente: ").strip()
+        if capacidad_max_input.isdigit():
+            capacidad_max = int(capacidad_max_input)
+        else:
+            capacidad_max = None
+
+        # Verificar que los valores mínimos y máximos sean válidos
+        if capacidad_min is not None and capacidad_max is not None and capacidad_min > capacidad_max:
+            print("Error: La capacidad mínima no puede ser mayor que la capacidad máxima.")
+        else:
+            ambientes_filtrados = gestor_ambientes.buscar_ambientes_con_filtros(tipo, disponibilidad, activo, capacidad_min, capacidad_max)
+            if ambientes_filtrados.empty:
+                print("No se encontraron ambientes que coincidan con los criterios de búsqueda.")
+            else:
+                print("Ambientes encontrados:")
+                print(ambientes_filtrados)
+    elif opcion == '9':
         print("Saliendo...")
         return False
     else:
