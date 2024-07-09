@@ -1,7 +1,7 @@
 import sys
 import os
 import pandas as pd
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit, QHBoxLayout
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
@@ -60,7 +60,7 @@ class VentanaLogin(QDialog):
             self.usuario = Usuario(nombre_usuario, 'administrador')
             return True
         elif nombre_usuario == 'gabriel' and contrasena == 'banano':
-             
+            # 
             self.usuario = Usuario(nombre_usuario, 'basico')
             return True
         else:
@@ -104,25 +104,33 @@ class VentanaPrincipal(QMainWindow):
 
     def mostrar_control_ambientes(self):
         self.ventana_ambientes = VentanaControlAmbientes(self)
-        self.setCentralWidget(self.ventana_ambientes)
+        self.ventana_ambientes.show()
+        self.hide()
 
     def mostrar_control_actividades(self):
         self.ventana_actividades = VentanaControlActividades(self)
-        self.setCentralWidget(self.ventana_actividades)
+        self.ventana_actividades.show()
+        self.hide()
 
     def mostrar_control_horarios(self):
         self.ventana_horarios = VentanaControlHorarios(self)
-        self.setCentralWidget(self.ventana_horarios)
+        self.ventana_horarios.show()
+        self.hide()
 
 class VentanaControlAmbientes(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, ventana_principal, parent=None):
         super().__init__(parent)
+        self.ventana_principal = ventana_principal
         self.setWindowTitle("Control de Ambientes")
         self.setGeometry(200, 200, 600, 400)
 
+        self.regreso_button = QPushButton("Regresar")
+        self.regreso_button.clicked.connect(self.regresar)
+        
         self.parent = parent
         self.gestor_ambientes = GestorDeAmbientes(usuario=admin,ambientes_df=ambientes_data)
-
+        
+                 
         self.initUI()
 
     def initUI(self):
@@ -144,6 +152,13 @@ class VentanaControlAmbientes(QWidget):
         vbox.addWidget(self.btn_consultar)
         vbox.addWidget(self.btn_mostrar_ambientes_disponibles)
         vbox.addStretch()
+        
+        hbox = QHBoxLayout()
+        hbox.addStretch()
+        hbox.addWidget(self.regreso_button)
+        hbox.addStretch()
+
+        vbox.addLayout(hbox)
 
         self.setLayout(vbox)
 
@@ -152,7 +167,11 @@ class VentanaControlAmbientes(QWidget):
         self.btn_actualizar.clicked.connect(self.actualizar_ambiente)
         self.btn_consultar.clicked.connect(self.consultar_ambiente)
         self.btn_mostrar_ambientes_disponibles.clicked.connect(self.mostrar_ambientes_disponibles)
-
+        
+    def regresar(self):
+        self.ventana_principal.show()  
+        self.close()
+        
     def agregar_ambiente(self):
         codigo, ok = QInputDialog.getText(self, "Agregar Ambiente", "Ingrese el código del ambiente:")
         if ok and codigo:
@@ -262,13 +281,17 @@ class MostrarAmbientesDialogo(QDialog):
                 self.table.setItem(i, j, QTableWidgetItem(str(value)))
                 
 class VentanaControlActividades(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, ventana_principal, parent=None):
         super().__init__()
+        self.ventana_principal = ventana_principal
         self.setWindowTitle("Control de Actividades")
         self.setGeometry(200, 200, 600, 400)
 
         self.gestor_actividades = GestorDeActividades(usuario=admin,actividades_df=actividades_data)
-
+        
+        self.regreso_button = QPushButton("Regresar")
+        self.regreso_button.clicked.connect(self.regresar)
+        
         self.initUI()
 
     def initUI(self):
@@ -288,6 +311,13 @@ class VentanaControlActividades(QWidget):
         vbox.addWidget(self.btn_actualizar)
         vbox.addWidget(self.btn_consultar)
         vbox.addStretch()
+        
+        hbox = QHBoxLayout()
+        hbox.addStretch()
+        hbox.addWidget(self.regreso_button)
+        hbox.addStretch()
+
+        vbox.addLayout(hbox)
 
         self.setLayout(vbox)
 
@@ -295,7 +325,11 @@ class VentanaControlActividades(QWidget):
         self.btn_eliminar.clicked.connect(self.eliminar_actividad)
         self.btn_actualizar.clicked.connect(self.actualizar_actividad)
         self.btn_consultar.clicked.connect(self.consultar_actividad)
-        
+    
+    def regresar(self):
+        self.ventana_principal.show()  
+        self.close()
+             
     def agregar_actividad(self):
         nombre, ok = QInputDialog.getText(self, "Agregar Actividad", "Ingrese el nombre de la actividad:")
         if ok and nombre:
@@ -338,11 +372,14 @@ class VentanaControlActividades(QWidget):
     
 
 class VentanaControlHorarios(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, ventana_principal, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Control de Horarios")
         self.setGeometry(200, 200, 600, 400)
 
+        self.regreso_button = QPushButton("Regresar")
+        self.regreso_button.clicked.connect(self.regresar)
+        
         self.gestor_actividades = GestorDeActividades(usuario=admin, actividades_df=actividades_data)
         self.gestor_ambientes = GestorDeAmbientes(usuario=admin, ambientes_df=ambientes_data)
         self.horarios_df = HorariosDataFrame(horarios_data)
@@ -365,12 +402,23 @@ class VentanaControlHorarios(QWidget):
         vbox.addWidget(self.btn_mostrar_horarios)
         vbox.addStretch()
 
+        hbox = QHBoxLayout()
+        hbox.addStretch()
+        hbox.addWidget(self.regreso_button)
+        hbox.addStretch()
+
+        vbox.addLayout(hbox)
+        
         self.setLayout(vbox)
 
         self.btn_consultar_horario.clicked.connect(self.consultar_horario)
         self.btn_asignar_actividad.clicked.connect(self.asignar_actividad)
         self.btn_mostrar_horarios.clicked.connect(self.mostrar_horarios)
         
+    def regresar(self):
+        self.ventana_principal.show()  
+        self.close()
+             
     def consultar_horario(self):
         self.consultar_horario_dialogo = ConsultarHorarioDialogo(self.gestor_ambientes, self.gestor_actividades)
         self.consultar_horario_dialogo.exec_()
@@ -512,7 +560,7 @@ class MostrarHorariosDialogo(QDialog):
             self.table.setItem(i, 0, QTableWidgetItem(ambiente))
             for j, (periodo, actividad) in enumerate(row.items(), start=1):
                 self.table.setItem(i, j, QTableWidgetItem(actividad))
-                
+            
 def main():
     app = QApplication(sys.argv)
     ventana_principal = VentanaPrincipal()
