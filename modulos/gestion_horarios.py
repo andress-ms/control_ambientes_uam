@@ -97,9 +97,6 @@ class HorariosDataFrame:
             self.horarios_df = self.horarios_df.drop(index=ambiente_codigo)
         else:
             print(f"Registro anterior de Ambiente '{ambiente_codigo}' no encontrado.")
-  
-    def exportar_a_csv(self, nombre_archivo):
-        self.horarios_df.to_csv(nombre_archivo, index=False)
 
     def verificar_disponibilidad(self, ambiente_codigo: str, periodo_inicio: str, duracion: int, gestor_ambientes: GestorDeAmbientes) -> bool:
         horario = self.consultar_horario(ambiente_codigo, gestor_ambientes)
@@ -206,4 +203,5 @@ class HorariosDataFrame:
             print("Entrada inválida. Ingrese un número válido.")
 
     def exportar_a_csv(self, nombre_archivo):
-        exportar_dataframe_a_csv(self.horarios_df, nombre_archivo)
+        df_to_export = self.horarios_df.reset_index()
+        df_to_export.to_csv(nombre_archivo, index=False)
