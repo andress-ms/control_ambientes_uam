@@ -358,46 +358,98 @@ class VentanaControlActividades(QWidget):
         self.close()
              
     def agregar_actividad(self):
+        codigo_clase, ok = QInputDialog.getText(self, "Agregar Actividad", "Ingrese el código de la clase:")
+        if not ok or not codigo_clase:
+            return
+
         nombre, ok = QInputDialog.getText(self, "Agregar Actividad", "Ingrese el nombre de la actividad:")
-        if ok and nombre:
-            tipo, ok = QInputDialog.getText(self, "Agregar Actividad", "Ingrese el tipo de actividad:")
-            if ok and tipo:
-                nueva_actividad = Actividad(nombre, tipo)
-                self.gestor_actividades.agregar_actividad(nueva_actividad)
+        if not ok or not nombre:
+            return
+
+        duracion, ok = QInputDialog.getInt(self, "Agregar Actividad", "Ingrese la duración de la actividad (en minutos):")
+        if not ok:
+            return
+
+        tamaño, ok = QInputDialog.getInt(self, "Agregar Actividad", "Ingrese el tamaño del grupo:")
+        if not ok:
+            return
+
+        grupo, ok = QInputDialog.getText(self, "Agregar Actividad", "Ingrese el grupo:")
+        if not ok or not grupo:
+            return
+
+        docente, ok = QInputDialog.getText(self, "Agregar Actividad", "Ingrese el nombre del docente (opcional):")
+        if not ok:
+            docente = None
+
+        nueva_actividad = Actividad(codigo_clase, nombre, duracion, tamaño, grupo, docente)
+        self.gestor_actividades.agregar_actividad(nueva_actividad)
+        self.exportar_actividades()
 
     def eliminar_actividad(self):
-        nombre, ok = QInputDialog.getText(self, "Eliminar Actividad", "Ingrese el nombre de la actividad a eliminar:")
-        if ok and nombre:
-            self.gestor_actividades.eliminar_actividad(nombre)
-            QMessageBox.information(self, "Éxito", "Actividad eliminada correctamente.")
+        codigo_clase, ok = QInputDialog.getText(self, "Eliminar Actividad", "Ingrese el código de la clase de la actividad a eliminar:")
+        if ok and codigo_clase:
+            actividad_df = self.gestor_actividades.consultar_actividad(codigo_clase)
+            if not actividad_df.empty:
+                self.gestor_actividades.eliminar_actividad(codigo_clase)
+                self.exportar_actividades()
+                QMessageBox.information(self, "Éxito", "Actividad eliminada correctamente.")
+            else:
+                QMessageBox.warning(self, "Error", f"Actividad con código de clase {codigo_clase} no encontrada.")
 
     def actualizar_actividad(self):
-       nombre, ok = QInputDialog.getText(self, "Actualizar Actividad", "Ingrese el nombre de la actividad a actualizar:")
-       if ok and nombre:
-            actividad = self.gestor_actividades.consultar_actividad(nombre)
-            if actividad is not None:
-                nuevo_nombre, ok = QInputDialog.getText(self, "Actualizar Actividad", f"Nombre actual: {actividad.nombre}, ingrese el nuevo nombre de la actividad:")
-                if ok and nuevo_nombre:
-                    nuevo_tipo, ok = QInputDialog.getText(self, "Actualizar Actividad", f"Tipo actual: {actividad.tipo}, ingrese el nuevo tipo de actividad:")
-                    if ok and nuevo_tipo:
-                        nueva_actividad = Actividad(nuevo_nombre, nuevo_tipo)
-                        self.gestor_actividades.actualizar_actividad(nombre, nueva_actividad)
-                        QMessageBox.information(self, "Éxito", "Actividad actualizada correctamente.")
+        codigo_clase, ok = QInputDialog.getText(self, "Actualizar Actividad", "Ingrese el código de la clase de la actividad a actualizar:")
+        if ok and codigo_clase:
+            actividad_df = self.gestor_actividades.consultar_actividad(codigo_clase)
+            if not actividad_df.empty:
+                actividad = actividad_df.iloc[0]  # Obtener la primera fila del DataFrame
+                nuevo_nombre, ok = QInputDialog.getText(self, "Actualizar Actividad", f"Nombre actual: {actividad['nombre']}, ingrese el nuevo nombre de la actividad:")
+                if not ok:
+                    return
+                nueva_duracion, ok = QInputDialog.getInt(self, "Actualizar Actividad", f"Duración actual: {actividad['duracion']}, ingrese la nueva duración de la actividad (en minutos):")
+                if not ok:
+                    return
+                nuevo_tamaño, ok = QInputDialog.getInt(self, "Actualizar Actividad", f"Tamaño actual: {actividad['tamaño']}, ingrese el nuevo tamaño del grupo:")
+                if not ok:
+                    return
+                nuevo_grupo, ok = QInputDialog.getText(self, "Actualizar Actividad", f"Grupo actual: {actividad['grupo']}, ingrese el nuevo grupo:")
+                if not ok:
+                    return
+                nuevo_docente, ok = QInputDialog.getText(self, "Actualizar Actividad", f"Docente actual: {actividad['docente']}, ingrese el nuevo nombre del docente (opcional):")
+                if not ok:
+                    nuevo_docente = actividad['docente']
+                datos_actualizados = {
+                    'nombre': nuevo_nombre,
+                    'duracion': nueva_duracion,
+                    'tamaño': nuevo_tamaño,
+                    'grupo': nuevo_grupo,
+                    'docente': nuevo_docente
+                }
+                self.gestor_actividades.actualizar_actividad(codigo_clase, datos_actualizados)
+                self.exportar_actividades()
+                QMessageBox.information(self, "Éxito", "Actividad actualizada correctamente.")
             else:
-                QMessageBox.warning(self, "Error", f"Actividad con nombre {nombre} no encontrada.")
+                QMessageBox.warning(self, "Error", f"Actividad con código de clase {codigo_clase} no encontrada.")
+
 
     def consultar_actividad(self):
-        nombre, ok = QInputDialog.getText(self, "Consultar Actividad", "Ingrese el nombre de la actividad a consultar:")
-        if ok and nombre:
-            actividad = self.gestor_actividades.consultar_actividad(nombre)
-            if actividad is not None:
-                QMessageBox.information(self, "Consulta de Actividad", f"Nombre de Actividad: {actividad.nombre}\nTipo: {actividad.tipo}")
+        codigo_clase, ok = QInputDialog.getText(self, "Consultar Actividad", "Ingrese el código de la clase de la actividad a consultar:")
+        if ok and codigo_clase:
+            actividad_df = self.gestor_actividades.consultar_actividad(codigo_clase)
+            if not actividad_df.empty:
+                actividad = actividad_df.iloc[0]  # Obtener la primera fila del DataFrame
+                QMessageBox.information(self, "Consulta de Actividad", 
+                                        f"Código de Clase: {actividad['codigo_clase']}\n"
+                                        f"Nombre de Actividad: {actividad['nombre']}\n"
+                                        f"Duración: {actividad['duracion']} minutos\n"
+                                        f"Tamaño: {actividad['tamaño']}\n"
+                                        f"Grupo: {actividad['grupo']}\n"
+                                        f"Docente: {actividad['docente']}")
             else:
-                QMessageBox.warning(self, "Error", f"Actividad con nombre {nombre} no encontrada.")
-                
+                QMessageBox.warning(self, "Error", f"Actividad con código de clase {codigo_clase} no encontrada.")
+    def exportar_actividades(self):
+        self.gestor_actividades.exportar_a_csv(csv_path_actividades)
         
-    
-
 class VentanaControlHorarios(QWidget):
     def __init__(self, ventana_principal, parent=None):
         super().__init__(parent)
@@ -421,12 +473,14 @@ class VentanaControlHorarios(QWidget):
 
         self.btn_consultar_horario = QPushButton("Consultar Horario", self)
         self.btn_asignar_actividad = QPushButton("Asignar Actividad", self)
+        self.btn_asignar_aula_actividad = QPushButton("Asignar Aula a Actividad", self)
         self.btn_mostrar_horarios = QPushButton("Mostrar Horarios", self)
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.label_titulo)
         vbox.addWidget(self.btn_consultar_horario)
         vbox.addWidget(self.btn_asignar_actividad)
+        vbox.addWidget(self.btn_asignar_aula_actividad)
         vbox.addWidget(self.btn_mostrar_horarios)
         vbox.addStretch()
 
@@ -441,6 +495,7 @@ class VentanaControlHorarios(QWidget):
 
         self.btn_consultar_horario.clicked.connect(self.consultar_horario)
         self.btn_asignar_actividad.clicked.connect(self.asignar_actividad)
+        self.btn_asignar_aula_actividad.clicked.connect(self.asignar_aula_actividad)
         self.btn_mostrar_horarios.clicked.connect(self.mostrar_horarios)
         
     def regresar(self):
@@ -455,6 +510,10 @@ class VentanaControlHorarios(QWidget):
         self.asignar_actividad_dialogo = AsignarActividadDialogo(self.gestor_ambientes, self.gestor_actividades, self.horarios_df)
         self.asignar_actividad_dialogo.exec_()
     
+    def asignar_aula_actividad(self):
+        self.asignar_aula_actividad_dialogo = AsignarAulaActividadDialogo(self.gestor_ambientes, self.gestor_actividades, self.horarios_df)
+        self.asignar_aula_actividad_dialogo.exec_()
+        
     def mostrar_horarios(self):
         try:
             if not self.horarios_df.horarios_df.empty:
@@ -552,6 +611,132 @@ class AsignarActividadDialogo(QDialog):
                             QMessageBox.warning(self, "Error", f"Actividad con código {codigo_actividad} no encontrada.")
             else:
                 QMessageBox.warning(self, "Error", f"Ambiente con código {codigo_ambiente} no encontrado.")
+
+class AsignarAulaActividadDialogo(QDialog):
+    def __init__(self, gestor_ambientes, gestor_actividades, horarios_df, parent=None):
+        super().__init__(parent)
+        self.gestor_ambientes = gestor_ambientes
+        self.gestor_actividades = gestor_actividades
+        self.horarios_df = horarios_df
+
+        self.setWindowTitle("Asignar Aula a Actividad")
+        self.setGeometry(300, 300, 500, 400)
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+
+        self.label = QLabel("Asignar Aula a Actividad")
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 20px;")
+        layout.addWidget(self.label)
+
+        # Step 1: Select Activity
+        self.label_actividad = QLabel("Seleccione la Actividad:", self)
+        layout.addWidget(self.label_actividad)
+
+        self.combo_actividades = QComboBox(self)
+        self.combo_actividades.addItem("")  # Opción en blanco
+        self.combo_actividades.addItems(self.gestor_actividades.actividades_df['nombre'].tolist())
+        layout.addWidget(self.combo_actividades)
+
+        # Step 2: Select Environment (filtered by activity requirements)
+        self.label_ambiente = QLabel("Seleccione el Ambiente:", self)
+        layout.addWidget(self.label_ambiente)
+
+        self.combo_ambientes = QComboBox(self)
+        layout.addWidget(self.combo_ambientes)
+
+        # Step 3: Select Free Period
+        self.label_periodo = QLabel("Seleccione el Periodo Libre:", self)
+        layout.addWidget(self.label_periodo)
+
+        self.combo_periodos = QComboBox(self)
+        layout.addWidget(self.combo_periodos)
+
+        self.btn_asignar = QPushButton("Asignar", self)
+        self.btn_asignar.clicked.connect(self.asignar)
+        layout.addWidget(self.btn_asignar)
+
+        self.setLayout(layout)
+
+        # Conectar señales
+        self.combo_actividades.currentIndexChanged.connect(self.update_ambientes)
+
+    def update_ambientes(self):
+        # Desconectar señal para evitar que se dispare automáticamente al seleccionar opción en blanco
+        try:
+            self.combo_ambientes.currentIndexChanged.disconnect(self.update_periodos)
+        except TypeError:
+            pass 
+        
+        # Obtener nombre de la actividad seleccionada
+        actividad_nombre = self.combo_actividades.currentText()
+
+        # Verificar si se ha seleccionado una actividad válida (no la opción en blanco)
+        if actividad_nombre:
+            actividad_data = self.gestor_actividades.actividades_df[self.gestor_actividades.actividades_df['nombre'] == actividad_nombre].iloc[0]
+            actividad = Actividad(**actividad_data.to_dict())
+            
+            # Obtener ambientes disponibles para la actividad seleccionada
+            ambientes_disponibles = self.horarios_df.mostrar_ambientes_disponibles(actividad, self.gestor_ambientes)
+
+            # Actualizar combo de ambientes
+            self.combo_ambientes.clear()
+            self.combo_ambientes.addItem("")  # Opción en blanco
+            self.combo_ambientes.addItems(ambientes_disponibles)
+
+        # Reconectar señal al finalizar actualización
+        self.combo_ambientes.currentIndexChanged.connect(self.update_periodos)
+
+    def update_periodos(self):
+        # Desconectar señal para evitar que se dispare automáticamente al seleccionar opción en blanco
+        try:
+            self.combo_periodos.currentIndexChanged.disconnect(self.asignar)
+        except TypeError:
+            pass
+
+        # Obtener nombre de ambiente seleccionado
+        ambiente_codigo = self.combo_ambientes.currentText()
+
+        # Verificar si se ha seleccionado un ambiente válido (no la opción en blanco)
+        if ambiente_codigo:
+            # Obtener nombre de la actividad seleccionada
+            actividad_nombre = self.combo_actividades.currentText()
+            actividad_data = self.gestor_actividades.actividades_df[self.gestor_actividades.actividades_df['nombre'] == actividad_nombre].iloc[0]
+            actividad = Actividad(**actividad_data.to_dict())
+            
+            # Obtener periodos libres para el ambiente y duración de la actividad seleccionados
+            periodos_libres = self.horarios_df.obtener_periodos_libres(ambiente_codigo, actividad.duracion)
+
+            # Actualizar combo de periodos libres
+            self.combo_periodos.clear()
+            self.combo_periodos.addItem("")  # Opción en blanco
+            self.combo_periodos.addItems(periodos_libres)
+
+        # Reconectar señal al finalizar actualización
+        self.combo_periodos.currentIndexChanged.connect(self.asignar)
+
+    def asignar(self):
+        # Obtener valores seleccionados
+        actividad_nombre = self.combo_actividades.currentText()
+        ambiente_codigo = self.combo_ambientes.currentText()
+        periodo_inicio = self.combo_periodos.currentText()
+
+        # Verificar si se han seleccionado todos los valores necesarios
+        if not actividad_nombre or not ambiente_codigo or not periodo_inicio:
+            QMessageBox.critical(self, "Error", "Debe seleccionar una actividad, un ambiente y un periodo libre.")
+            return
+
+        # Obtener datos de la actividad seleccionada
+        actividad_data = self.gestor_actividades.actividades_df[self.gestor_actividades.actividades_df['nombre'] == actividad_nombre].iloc[0]
+        actividad = Actividad(**actividad_data.to_dict())
+        
+        # Asignar actividad al ambiente y periodo seleccionados
+        self.horarios_df.asignar_actividad_a_ambiente(ambiente_codigo, periodo_inicio, actividad, self.gestor_ambientes)
+        
+        QMessageBox.information(self, "Éxito", "Actividad asignada correctamente.")
+
 
 class MostrarHorariosDialogo(QDialog):
     def __init__(self, horarios_df, parent=None):
