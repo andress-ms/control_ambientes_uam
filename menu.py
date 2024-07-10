@@ -330,13 +330,15 @@ class VentanaControlActividades(QWidget):
         self.btn_eliminar = QPushButton("Eliminar Actividad", self)
         self.btn_actualizar = QPushButton("Actualizar Actividad", self)
         self.btn_consultar = QPushButton("Consultar Actividad", self)
-
+        self.btn_mostrar =  QPushButton("Mostrar Actividades")
+        
         vbox = QVBoxLayout()
         vbox.addWidget(self.label_titulo)
         vbox.addWidget(self.btn_agregar)
         vbox.addWidget(self.btn_eliminar)
         vbox.addWidget(self.btn_actualizar)
         vbox.addWidget(self.btn_consultar)
+        vbox.addWidget(self.btn_mostrar)
         vbox.addStretch()
         
         hbox = QHBoxLayout()
@@ -352,6 +354,7 @@ class VentanaControlActividades(QWidget):
         self.btn_eliminar.clicked.connect(self.eliminar_actividad)
         self.btn_actualizar.clicked.connect(self.actualizar_actividad)
         self.btn_consultar.clicked.connect(self.consultar_actividad)
+        self.btn_mostrar.clicked.connect(self.mostrar_actividades)
     
     def regresar(self):
         self.ventana_principal.show()  
@@ -366,7 +369,7 @@ class VentanaControlActividades(QWidget):
         if not ok or not nombre:
             return
 
-        duracion, ok = QInputDialog.getInt(self, "Agregar Actividad", "Ingrese la duración de la actividad (en minutos):")
+        duracion, ok = QInputDialog.getInt(self, "Agregar Actividad", "Ingrese la duración de la actividad (en periodos):")
         if not ok:
             return
 
@@ -406,7 +409,7 @@ class VentanaControlActividades(QWidget):
                 nuevo_nombre, ok = QInputDialog.getText(self, "Actualizar Actividad", f"Nombre actual: {actividad['nombre']}, ingrese el nuevo nombre de la actividad:")
                 if not ok:
                     return
-                nueva_duracion, ok = QInputDialog.getInt(self, "Actualizar Actividad", f"Duración actual: {actividad['duracion']}, ingrese la nueva duración de la actividad (en minutos):")
+                nueva_duracion, ok = QInputDialog.getInt(self, "Actualizar Actividad", f"Duración actual: {actividad['duracion']}, ingrese la nueva duración de la actividad (en periodos):")
                 if not ok:
                     return
                 nuevo_tamaño, ok = QInputDialog.getInt(self, "Actualizar Actividad", f"Tamaño actual: {actividad['tamaño']}, ingrese el nuevo tamaño del grupo:")
@@ -441,15 +444,60 @@ class VentanaControlActividades(QWidget):
                 QMessageBox.information(self, "Consulta de Actividad", 
                                         f"Código de Clase: {actividad['codigo_clase']}\n"
                                         f"Nombre de Actividad: {actividad['nombre']}\n"
-                                        f"Duración: {actividad['duracion']} minutos\n"
+                                        f"Duración: {actividad['duracion']} periodos\n"
                                         f"Tamaño: {actividad['tamaño']}\n"
                                         f"Grupo: {actividad['grupo']}\n"
                                         f"Docente: {actividad['docente']}")
             else:
                 QMessageBox.warning(self, "Error", f"Actividad con código de clase {codigo_clase} no encontrada.")
+                
     def exportar_actividades(self):
         self.gestor_actividades.exportar_a_csv(csv_path_actividades)
         
+    def mostrar_actividades(self):
+        actividades_df = self.gestor_actividades.actividades_df  # Obtener el DataFrame de actividades
+        self.mostrar_actividades_dialogo = MostrarActividadesDialogo(actividades_df)
+        self.mostrar_actividades_dialogo.exec_()
+
+class MostrarActividadesDialogo(QDialog):
+    def __init__(self, actividades_df, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Mostrar Actividades")
+        self.setGeometry(300, 300, 800, 600)
+        
+        self.actividades_df = actividades_df.fillna('-')  # Reemplazar NaN con '-'
+        
+        self.initUI()
+
+    def initUI(self):
+        vbox = QVBoxLayout(self)
+
+        self.label_titulo = QLabel("Actividades Registradas", self)
+        self.label_titulo.setAlignment(Qt.AlignCenter)
+        self.label_titulo.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 20px;")
+        vbox.addWidget(self.label_titulo)
+
+        self.table = QTableWidget(self)
+        
+        if not self.actividades_df.empty:
+            self.table.setColumnCount(len(self.actividades_df.columns))
+            self.table.setHorizontalHeaderLabels(self.actividades_df.columns.tolist())
+            self.llenar_tabla()
+        else:
+            self.table.setColumnCount(1)
+            self.table.setHorizontalHeaderLabels(["No hay actividades registradas"])
+
+        vbox.addWidget(self.table)
+        self.setLayout(vbox)
+        
+    def llenar_tabla(self):
+        self.table.setRowCount(len(self.actividades_df))
+
+        for i, row in self.actividades_df.iterrows():
+            for j, (column, value) in enumerate(row.items()):
+                self.table.setItem(i, j, QTableWidgetItem(str(value)))
+
+
 class VentanaControlHorarios(QWidget):
     def __init__(self, ventana_principal, parent=None):
         super().__init__(parent)
