@@ -72,48 +72,6 @@ class HorariosDataFrame:
         else:
             print(f"No se encontró el ambiente con código '{codigo_ambiente}' en el horario.")
             return pd.Series()
-    
-    """def consultar_horario(self, codigo_ambiente: str, gestor_ambientes: GestorDeAmbientes):
-        if gestor_ambientes is None:
-            print("Error: El gestor de ambientes no está definido.")
-            return None
-        
-        ambiente_data = gestor_ambientes.consultar_ambiente(codigo_ambiente)
-        
-        if not ambiente_data.empty:
-            # Convertir ambiente_data a un objeto Ambiente
-            ambiente_info = ambiente_data.iloc[0].to_dict()
-            ambiente = Ambiente(**ambiente_info)
-            
-            if codigo_ambiente in self.horarios_df.index:
-                data = self.horarios_df.loc[codigo_ambiente]
-            else:
-                data = {periodo: None for periodo in self.horarios_df.columns if periodo != 'ambiente'}
-
-            horario = Horario(ambiente)
-            for periodo, actividad in data.items():
-                if isinstance(actividad, str):
-                    if actividad == '-':
-                        horario.periodos[periodo] = None
-                    else:
-                        # Aquí se asume que la cadena contiene el nombre de la actividad
-                        actividad_obj = Actividad(
-                            codigo_clase='',
-                            nombre=actividad,
-                            duracion=0,
-                            tamaño=0,
-                            grupo='',
-                            docente=None
-                        )
-                elif isinstance(actividad, Actividad):
-                    actividad_obj = actividad
-                else:
-                    actividad_obj = None
-                    horario.periodos[periodo] = actividad_obj
-            return horario
-        else:
-            print(f"No se encontró el ambiente con código '{codigo_ambiente}'.")
-            return None"""
 
     def mostrar_horarios(self):
         df_horarios = self.horarios_df.fillna('-')
@@ -247,4 +205,5 @@ class HorariosDataFrame:
         except ValueError:
             print("Entrada inválida. Ingrese un número válido.")
 
-
+    def exportar_a_csv(self, nombre_archivo):
+        exportar_dataframe_a_csv(self.horarios_df, nombre_archivo)

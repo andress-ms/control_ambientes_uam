@@ -654,6 +654,7 @@ class AsignarActividadDialogo(QDialog):
                         if not actividad.empty:
                             actividad_obj = Actividad(**actividad.iloc[0].to_dict())
                             self.horarios_df.asignar_actividad_a_ambiente(codigo_ambiente, periodo, actividad_obj, self.gestor_ambientes)
+                            self.exportar_horarios()
                             QMessageBox.information(self, "Éxito", "Actividad asignada correctamente.")
                         else:
                             QMessageBox.warning(self, "Error", f"Actividad con código {codigo_actividad} no encontrada.")
@@ -782,9 +783,11 @@ class AsignarAulaActividadDialogo(QDialog):
         
         # Asignar actividad al ambiente y periodo seleccionados
         self.horarios_df.asignar_actividad_a_ambiente(ambiente_codigo, periodo_inicio, actividad, self.gestor_ambientes)
-        
+        self.exportar_horarios()
         QMessageBox.information(self, "Éxito", "Actividad asignada correctamente.")
-
+    
+    def exportar_horarios(self):
+        self.horarios_df.exportar_a_csv(csv_path_horarios)
 
 class MostrarHorariosDialogo(QDialog):
     def __init__(self, horarios_df, parent=None):
