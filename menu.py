@@ -1,7 +1,7 @@
 import sys
 import os
 import pandas as pd
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit, QHBoxLayout, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QMessageBox, QTableWidget, QTableWidgetItem, QMenuBar, QMenu, QAction, QInputDialog, QDialog, QLineEdit, QHBoxLayout, QComboBox, QDesktopWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
@@ -92,8 +92,24 @@ class VentanaPrincipal(QMainWindow):
         self.btn_control_actividades = QPushButton("Control de Actividades", self)
         self.btn_control_horarios = QPushButton("Control de Horarios", self)
 
+        self.btn_control_ambientes.setMinimumSize(200,50)
+        self.btn_control_actividades.setMinimumSize(200,50)
+        self.btn_control_horarios.setMinimumSize(200,50)
+        
+        button_style = """
+        QPushButton{
+            font-size: 18px;
+            padding: 10px;
+        }
+    """""
+    
+        self.btn_control_ambientes.setStyleSheet(button_style)
+        self.btn_control_actividades.setStyleSheet(button_style)
+        self.btn_control_horarios.setStyleSheet(button_style)
+        
         vbox = QVBoxLayout()
         vbox.addWidget(self.label_titulo)
+        vbox.addStretch()
         vbox.addWidget(self.btn_control_ambientes)
         vbox.addWidget(self.btn_control_actividades)
         vbox.addWidget(self.btn_control_horarios)
@@ -107,6 +123,15 @@ class VentanaPrincipal(QMainWindow):
         self.btn_control_actividades.clicked.connect(self.mostrar_control_actividades)
         self.btn_control_horarios.clicked.connect(self.mostrar_control_horarios)
 
+        self.resize(400, 300)
+        self.center()
+        
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())    
+        
     def mostrar_control_ambientes(self):
         self.ventana_ambientes = VentanaControlAmbientes(self)
         self.ventana_ambientes.show()
@@ -697,7 +722,7 @@ class AsignarAulaActividadDialogo(QDialog):
         layout.addWidget(self.combo_ambientes)
 
         # Step 3: Select Free Period
-        self.label_periodo = QLabel("Seleccione el Periodo Libre:", self)
+        self.label_periodo = QLabel("Seleccione el Periodo de Inicio:", self)
         layout.addWidget(self.label_periodo)
 
         self.combo_periodos = QComboBox(self)
