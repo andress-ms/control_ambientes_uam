@@ -32,5 +32,8 @@ def cargar_datos(archivo_csv, archivo_excel, columnas, hoja_excel=None):
     return df
 
 
-def obtener_columnas_de_clase(clase):
-    return list(clase.__annotations__.keys())
+def obtener_columnas_de_clase(clase_o_dataframe):
+    if isinstance(clase_o_dataframe, type):  # Verificar si es una clase
+        return list(clase_o_dataframe.__annotations__.keys())
+    elif isinstance(clase_o_dataframe, pd.DataFrame):  # Verificar si es un DataFrame
+        return list(clase_o_dataframe.columns)

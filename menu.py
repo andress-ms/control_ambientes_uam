@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon
 from modulos.gestion_ambientes import GestorDeAmbientes, Ambiente
 from modulos.gestion_clases import GestorDeActividades, Actividad
 from modulos.administracion import Usuario
-from modulos.gestion_horarios import Horario, HorariosDataFrame, Actividad
+from modulos.gestion_horarios import HorariosDataFrame, Actividad
 from modulos.importar_datos import cargar_datos, obtener_columnas_de_clase
 
 # Todos los archivos deben encontrarse en la carpeta data
@@ -18,7 +18,7 @@ csv_path_actividades = os.path.join(current_dir, 'data', 'lista_actividades.csv'
 csv_path_horarios = os.path.join(current_dir, 'data', 'horarios.csv')
 ambientes_data=cargar_datos(csv_path_ambientes, excel_path, obtener_columnas_de_clase(Ambiente), hoja_excel="Hoja 1")
 actividades_data=cargar_datos(csv_path_actividades, excel_path, obtener_columnas_de_clase(Actividad), hoja_excel='Hoja 2')
-horarios_data=cargar_datos(csv_path_horarios, excel_path, obtener_columnas_de_clase(Horario), hoja_excel = 'Hoja 3')
+horarios_data=cargar_datos(csv_path_horarios, excel_path, obtener_columnas_de_clase(HorariosDataFrame), hoja_excel = 'Hoja 3')
 admin=Usuario(nombre='Admin', rol='administrador')
 
 class VentanaLogin(QDialog):
@@ -711,14 +711,9 @@ class AsignarAulaActividadDialogo(QDialog):
 
         # Conectar señales
         self.combo_actividades.currentIndexChanged.connect(self.update_ambientes)
-
+        self.combo_ambientes.currentIndexChanged.connect(self.update_periodos)
+    
     def update_ambientes(self):
-        # Desconectar señal para evitar que se dispare automáticamente al seleccionar opción en blanco
-        try:
-            self.combo_ambientes.currentIndexChanged.disconnect(self.update_periodos)
-        except TypeError:
-            pass 
-        
         # Obtener nombre de la actividad seleccionada
         actividad_nombre = self.combo_actividades.currentText()
 
@@ -728,43 +723,35 @@ class AsignarAulaActividadDialogo(QDialog):
             actividad = Actividad(**actividad_data.to_dict())
             
             # Obtener ambientes disponibles para la actividad seleccionada
-            ambientes_disponibles = self.horarios_df.mostrar_ambientes_disponibles(actividad, self.gestor_ambientes)
+            ambientes_disponibles = self.gestor_ambientes.filtrar_ambientes_para_actividad(actividad)
 
             # Actualizar combo de ambientes
             self.combo_ambientes.clear()
             self.combo_ambientes.addItem("")  # Opción en blanco
-            self.combo_ambientes.addItems(ambientes_disponibles)
-
-        # Reconectar señal al finalizar actualización
-        self.combo_ambientes.currentIndexChanged.connect(self.update_periodos)
+            self.combo_ambientes.addItems(ambientes_disponibles['codigo_ambiente'].tolist())
+        else:
+            self.combo_ambientes.clear()
 
     def update_periodos(self):
-        # Desconectar señal para evitar que se dispare automáticamente al seleccionar opción en blanco
-        try:
-            self.combo_periodos.currentIndexChanged.disconnect(self.asignar)
-        except TypeError:
-            pass
-
-        # Obtener nombre de ambiente seleccionado
+        # Obtener código de ambiente seleccionado
         ambiente_codigo = self.combo_ambientes.currentText()
 
         # Verificar si se ha seleccionado un ambiente válido (no la opción en blanco)
-        if ambiente_codigo:
+        if ambiente_codigo != "":
             # Obtener nombre de la actividad seleccionada
             actividad_nombre = self.combo_actividades.currentText()
             actividad_data = self.gestor_actividades.actividades_df[self.gestor_actividades.actividades_df['nombre'] == actividad_nombre].iloc[0]
             actividad = Actividad(**actividad_data.to_dict())
             
+            print(self.horarios_df.horarios_df)
             # Obtener periodos libres para el ambiente y duración de la actividad seleccionados
             periodos_libres = self.horarios_df.obtener_periodos_libres(ambiente_codigo, actividad.duracion)
-
             # Actualizar combo de periodos libres
             self.combo_periodos.clear()
             self.combo_periodos.addItem("")  # Opción en blanco
             self.combo_periodos.addItems(periodos_libres)
-
-        # Reconectar señal al finalizar actualización
-        self.combo_periodos.currentIndexChanged.connect(self.asignar)
+        else:
+            self.combo_periodos.clear()
 
     def asignar(self):
         # Obtener valores seleccionados
@@ -798,7 +785,7 @@ class MostrarHorariosDialogo(QDialog):
         if horarios_df is not None:
             self.horarios_df = horarios_df.fillna('-')
         else:
-            self.horarios_df = pd.DataFrame()  # Crear un DataFrame vacío para evitar errores
+            self.horarios_df = pd.DataFrame(columns=['Ambiente'])  # Crear un DataFrame con la columna 'Ambiente'
         
         self.initUI()
 
@@ -813,8 +800,8 @@ class MostrarHorariosDialogo(QDialog):
         self.table = QTableWidget(self)
         
         if not self.horarios_df.empty:
-            self.table.setColumnCount(len(self.horarios_df.columns) + 1)
-            self.table.setHorizontalHeaderLabels(["Ambiente"] + list(self.horarios_df.columns))
+            self.table.setColumnCount(len(self.horarios_df.columns))
+            self.table.setHorizontalHeaderLabels(self.horarios_df.columns.tolist())
             self.llenar_tabla()
         else:
             self.table.setColumnCount(1)
@@ -825,10 +812,11 @@ class MostrarHorariosDialogo(QDialog):
     def llenar_tabla(self):
         self.table.setRowCount(len(self.horarios_df))
 
-        for i, (ambiente, row) in enumerate(self.horarios_df.iterrows()):
-            self.table.setItem(i, 0, QTableWidgetItem(ambiente))
-            for j, (periodo, actividad) in enumerate(row.items(), start=1):
-                self.table.setItem(i, j, QTableWidgetItem(actividad))
+        for i, (index, row) in enumerate(self.horarios_df.iterrows()):
+            self.table.setItem(i, 0, QTableWidgetItem(index))  # Colocar el ambiente en la primera columna
+            for j, (columna, valor) in enumerate(row.items(), start=0):
+                item = QTableWidgetItem(str(valor))
+                self.table.setItem(i, j, item)
             
 def main():
     app = QApplication(sys.argv)
